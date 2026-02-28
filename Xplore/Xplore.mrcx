@@ -1,0 +1,449 @@
+;;;CORE CODE;;;
+
+;Note, all DLL functions and parameters are case sensetive.
+
+;Format
+
+; $GKSSP(void).ircvers - A parameter is needed otherwise it will not work.
+; $GKSSP(AuthType).init - A parameter is needed to distinguish the type of auth initiation (GateKeeper/GateKeeperPassport).
+; $GKSSP(void).auths - A parameter is needed otherwise it will not work.
+; $GKSSP(:GKSSP\0???\0\0\0?\0\0\0????????) - A parameter is needed to return a solution.
+
+
+alias GKSSP {
+  if (!$exists(GKSSP.dll)) { echo -a GateKeeper Security Service Package does not exist. | halt }
+  if ($prop == ircvers) return $dll(GKSSP.dll,ircvers,)
+  elseif ($prop == init) {
+    if ($1 == guest) return $dll(GKSSP.dll,auth_init,gatekeeper)
+    else return $dll(GKSSP.dll,auth_init,)
+  }
+  elseif ($prop == auths) return $dll(GKSSP.dll,auth_s,)
+  elseif ($prop == challenge) return $dll(GKSSP.dll,challenge,$1)
+}
+
+alias __PPINIT return $+($GKSSP(passport).init,$lf,$GKSSP(void).ircvers,$lf)
+alias __GKINIT return $+($GKSSP(guest).init,$lf,$GKSSP(void).ircvers,$lf)
+alias __GKSSReply return $+($GKSSP(void).auths)
+alias challenge_1 return $GKSSP($+($1,$2)).challenge
+
+;GateKeeper Conversion (For generating guest gates)
+
+alias gkssp_form {
+  var %output,%hex,%x = $1,%i = 1
+  ;seq=7,5,3,1,11,9,15,13,17
+  if ($len($1) < 32) { %x = $+($str(0,$calc(32 - $len($ifmatch)),$ifmatch) }
+  %x = $mid(%x,7,2) $+ $mid(%x,5,2) $+ $mid(%x,3,2) $+ $mid(%x,1,2) $+ $mid(%x,11,2) $+ $mid(%x,9,2) $+ $mid(%x,15,2) $+ $mid(%x,13,2) $+ $right(%x,-16)
+  return $__tochr($__hexbin(%x,NULL))
+}
+
+alias __tochr {
+  var %o,%i = 1
+  while (%i <= $numtok($1-,32)) {
+    %o = %o $+ $chr($gettok($1-,%i,32))
+    inc %i
+  }
+  return %o
+}
+
+alias __hexbin { 
+  var %o,%i = 1,%hex,%switch
+  if (!$2) {
+    ;Excluding Escape Char
+    while (%i <= $len($1)) {
+      %o = %o $base($mid($1,%i,2),16,10)
+      inc %i 2
+    }
+    return %o
+  }
+  else {
+    ;Including Escaps Char (0=00,t=09,n=0A,r=0D,b=20,c=2C,\=5C)
+    while (%i <= $len($1)) {
+      %switch = $mid($1,%i,2)
+      if (%switch == 00) { %o = %o 92 48 }
+      elseif (%switch == 09) { %o = %o 92 116 } 
+      elseif (%switch == 0A) { %o = %o 92 110 } 
+      elseif (%switch == 0D) { %o = %o 92 114 } 
+      elseif (%switch == 20) { %o = %o 92 98 } 
+      elseif (%switch == 2C) { %o = %o 92 99 } 
+      elseif (%switch == 5C) { %o = %o 92 92 } 
+      else { %o = %o $base(%switch,16,10) }
+      inc %i 2
+    }
+    return %o
+  }
+}
+
+alias binary { 
+  var %binary
+  var %i = 1
+  while (%i <= 16) {
+    %binary = $+(%binary,$iif($rand(1,0) == 0,\0,$chr(1)))
+    inc %i
+  }
+  return %binary
+}
+
+alias guestform {
+  return $mid($1,7,2) $+ $mid($1,5,2) $+ $mid($1,3,2) $+ $left($1,2) $+ $mid($1,11,2) $+ $mid($1,9,2) $+ $mid($1,15,2) $+ $mid($1,13,2) $+ $right($1,16)
+}
+alias passform return $base($len($$1),10,16,8) $+ $1 $+ $base($len($$2),10,16,8) $+ $2
+
+alias getrndsck {
+  return $+(advance.,$rand(A,Z),$rand(a,z),$rand(A,Z),$rand(a,z),$rand(A,Z),$rand(a,z),$rand(A,Z),$rand(a,z),$rand(A,Z),$rand(a,z),$1)
+}
+
+alias lookups {
+  return 207.68.167.253
+}
+
+alias r exit | run $mircexe
+
+alias xpt {
+  echo @info �14,14�15,15�1,0 $+ $1-
+}
+
+on *:start:{
+  dll titlebar.dll titlebar Xplore
+  window -Sxk0ebl50 @info
+  xpt Xplore - Non ocx Scanning tool by Sky.
+  update
+}
+
+#guestmode on
+#guestmode end
+
+alias establish {
+  xpt Setting up connections...
+  var %chanx = 157,158,159,160,161,162
+  var %x = 1
+  sockclose tk2*
+  while (%x <= $numtok(%chanx,44)) {
+    sockopen $+(TK2CHATCHATA0,%x) $+(207.68.167.,$gettok(%chanx,%x,44)) 6667
+    inc %x
+  }
+  sockopen TK2CHATCHATA09 207.68.167.165 6667
+  sockopen TK2CHATCHATA10 207.68.167.166 6667
+}
+
+alias sr {
+  ;echo -s $2-
+  sockwrite -tn $1 $2-
+}
+
+on *:sockopen:TK*:{
+  .timerkeepfinds $+ $sockname 0 15 keepfinds $sockname $sock($sockname).ip $sock($sockname).port $sock($sockname).mark
+  if ($group(#guestmode) == on) {
+    sockwrite -tn $sockname NICK >Xplore
+    sockwrite $sockname $__GKINIT
+  }
+  else {
+    sockwrite -tn $sockname NICK Xplore
+    sockwrite $sockname $__PPINIT
+  }
+}
+
+alias keepfinds {
+  if ($sock($1).status == active) {
+    sockwrite -tn $1 VERSION
+  }
+  else {
+    sockopen $1 $2 $3
+    sockmark $1 $4
+  }
+}
+
+alias ConvertLanguage {
+  if ($1 == 1) { return English }
+  if ($1 == 2) { return French }
+  if ($1 == 3) { return German }
+  if ($1 == 4) { return Japanese }
+  if ($1 == 5) { return Swedish }
+  if ($1 == 6) { return Dutch }
+  if ($1 == 7)  { return Korean }
+  if ($1 == 9) { return Portuguese }
+  if ($1 == 10) { return Finnish }
+  if ($1 == 11) { return Danish }
+  if ($1 == 12) { return Russian }
+  if ($1 == 13) { return Italian }
+  if ($1 == 14) { return Norwegian }
+  if ($1 == 8) { return Chinese }
+  if ($1 == 16) { return Spanish }
+  if ($1 == 17) { return Czech }
+  if ($1 == 18) { return Greek }
+  if ($1 == 19) { return Hungarian }
+  if ($1 == 20) { return Polish }
+  if ($1 == 21) { return Slovene }
+  if ($1 == 22) { return Turkish }
+  if ($1 == 23) { return Slovak }
+  if ($1 == 24) { return Portuguese }
+}
+
+on *:sockread:TK*:{
+  var %data
+  sockread %data
+  tokenize 32 %data 
+  ;echo -a $1-
+  if ($1 == AUTH) {
+    if ($3 == S) && ($4 != :OK) { 
+      sockwrite $sockname $+($__GKSSReply,$challenge_1($4 $+ $sock($sockname).ip),$binary,$lf)
+    }
+    elseif ($4 == :OK) { sockwrite $sockname $+(AUTH $2 S %pauth,$lf) }
+    elseif ($3 == *) { sockwrite -tn $sockname USER $me "Sky" "127.0.0.1" :Xplore by Sky }
+  }
+  elseif ($2 == 001) && ($right($sockname,1) == 6) {
+    xpt Connections complete. Ready to scan... ( $+ $iif($group(#guestmode) == on,Guest,Passport) $+ )
+  }
+  if ($2 == 352) && ($dialog($right($4,-1))) {
+    if ($remove($9,H,U,G) $+ $msn.decode($8) != $null) {
+      if (!$dialog($8)) {
+        var %dlg = $right($4,-1))
+        did -a %dlg 2 $remove($9,H,U,G) $+ $msn.decode($8)
+        did -ra %dlg 1 Users: $did(%dlg,2).lines
+      }
+    }
+    hadd -m $msn.decode($8) Address $replace($5-6,$chr(32),@)
+    hadd -m $msn.decode($8) Nick $8
+    hadd -m $msn.decode($8) Tag $iif($11- == $null,None,$11-)
+    if ($dialog($8)) {
+      did -r $8 7 
+      did -a $8 7 Nickname: $8
+      did -a $8 7 GUID: $replace($5-6,$chr(32),@)
+      did -a $8 7 Tag: $iif($11- == $null,None,$11-)
+    }
+  }
+  elseif ($2 == 352) && ($dialog($8)) {
+    if ($4 != *) {
+      did -a $8 9 $4
+    }
+  }
+  if ($2 == 818) && ($dialog($right($4,-1))) {
+    if ($5 == Creation) {
+      did -a $right($4,-1)) 5 $5 $+ : $date($mid($6,2),dd/mm/yyyy) at $time($mid($6,2),hh:nn:ss)
+    }
+    elseif ($5 == Language) { did -a $right($4,-1)) 5 $5 $+ : $ConvertLanguage($remove($6,:)) }
+    else {
+      did -a $right($4,-1)) 5 $5 $+ : $remove($6-,:)
+    }
+  }
+  if ($2 == 324) && ($dialog($right($4,-1))) {
+    did -r $right($4,-1)) 4
+    did -a $right($4,-1)) 4 Modes: $5-
+  }
+}
+
+on *:dialog:*#*:dclick:5:{
+  clipboard $did($dname,5).seltext
+}
+
+on *:dialog:*#*:dclick:2:{
+  var %nick = $remove($did($dname,2).seltext,.,@,+)
+  %nick = $hget(%nick,Nick)
+  var %tag = $hget(%nick,Tag)
+  var %address = $hget(%nick,Address)
+  createuser %nick
+  sockwrite -tn TK* WHOIS %nick
+  sockwrite -tn TK* WHO %nick
+}
+
+menu @info {
+  Scan:{ scan }
+  $iif($sline(@info,1) != $null,Get Information,$null) $+ :{ xpt Getting information for the channel | xpt $sline(@info,1) | getinfo $sline(@info,1) } 
+  - 
+  Copy:{ clipboard $sline(@info,1) }
+  -
+  Mode
+  .Guest:{ .enable #guestmode | establish }
+  .Passport:{ .disable #guestmode | establish }
+}
+
+alias getinfo {
+  createdialog $1
+  sockwrite -tn TK* MODE $1
+  sockwrite -tn TK* PROP $1 *
+  sockwrite -tn TK* WHO $1
+}
+
+alias scan {
+  xpt Scanning...
+  xml CP
+  xml GE
+  xml EA
+  xml HE
+  xml II
+  xml LF
+  xml MU
+  xml NW
+  xml PR
+  xml RL
+  xml RM
+  xml SP
+  xml TN
+  xml PT
+  xml AC
+  xml EV
+}
+
+alias xmlhash return xml. $+ $rand(a,z) $+ $rand(a,z) $+ $rand(a,z) $+ $rand(a,z) $+ $rand(a,z)
+
+alias xml {
+  var %x = $xmlhash
+  sockopen %x chat.msn.com 80
+  sockmark %x $1
+}
+
+on *:SOCKOPEN:xml.*:{
+  sockwrite -tn $sockname GET /en-us/ChatFind/Set1/ $+ $sock($sockname).mark $+ /roomlist.xml $+ $crlf $+ Host: chat.msn.com $+ $crlf $+ $crlf
+}
+
+on *:SOCKREAD:xml.*:{
+  sockread -n &read
+  if ($bvar(&read,0) > 0) breplace &read 0 10
+  var %x = $bvar(&read,1,$iif($bvar(&read,0) < 900,$bvar(&read,0),900)).text
+  %x = $replace(%x,$chr(10),) 
+  if ($gettok(%x,1,32) == <channel) {  
+    ;var %utf8 = $dll(utf8.dll,decode,$gettok(%x,2,34))
+    var %room = $+($chr(37),$chr(35),$replace($gettok(%x,2,34),$chr(32),\b,&apos;,',&,♥,$chr(44),\c))
+    var %topic = $gettok(%x,4,34)
+    var %mode = $gettok(%x,6,34)
+    var %managed = $gettok(%x,8,34)
+    var %locale = $gettok(%x,10,34)
+    var %language = $gettok(%x,12,34)
+    var %currentusers = $gettok(%x,14,34)
+    var %maxusers = $gettok(%x,16,34)
+    if ($hget(Room,%room) == $null) {
+      aline -pl @info %room
+      dll titlebar.dll titlebar Xplore - $line(@info,0,1) Channels.
+      hadd -m Room %room %locale
+    }
+  }
+}
+
+
+dialog room {
+  title ""
+  size -1 -1 253 147
+  option dbu
+  box "Users:", 1, 161 1 92 145
+  list 2, 163 8 86 134, (hsbar, sort, size)
+  box "Properties:", 3, 1 1 158 145
+  text "Modes:", 4, 5 10 145 8
+  list 5, 5 19 146 109, (hsbar, sort, size)
+  button "OK", 6, 5 131 37 12, ok
+  button "Refresh", 7, 115 131 37 12
+}
+
+on *:DIALOG:*#*:sclick:7:{
+  did -r $dname 4
+  did -r $dname 5
+  did -r $dname 2
+  did -r $dname 1
+  var %room = $chr(37) $+ $dname
+  sockwrite -tn TK* MODE %room
+  sockwrite -tn TK* PROP %room *
+  sockwrite -tn TK* WHO %room
+}
+
+dialog User {
+  title ""
+  size -1 -1 176 113
+  option dbu
+  box "Rooms:", 6, 1 47 174 52
+  list 7, 4 7 169 37, size
+  button "OK", 8, 1 100 37 12, ok
+  list 9, 4 54 168 41, size
+  box "Properties:", 10, 0 0 176 46
+}
+
+on *:dialog:*:dclick:9:{
+  getinfo $$did($dname,9).seltext
+}
+
+on *:dialog:*:sclick:7:{
+  clipboard $did($dname,7).seltext
+}
+
+alias createdialog {
+  if ($dialog($right($1,-1))) { dialog -v $right($1,-1) | halt }
+  dialog -m $right($1,-1) room
+}
+
+alias createuser {
+  if ($dialog($1)) { dialog -v $1 | halt }
+  dialog -m $1 user
+  dialog -t $1 $msn.decode($1)
+}
+
+on *:dialog:*#*:init:0:{
+  dialog -t $dname Information for $chr(37) $+ $dname
+}
+alias -l msn.decode {
+  var %r, %l 1
+  %r = $replace($1-,,B,,-,�>,-,,-,,-,,E,,C,,A,,R,,K,,y,ﺘ,i,ﺉ,s,דּ,t,טּ,u,ﻉ,e,,k,,F,,u,,g,Χ,X,,>,,$chr(37),,8,,d,,m,,h,ﻛ,s,,G,,M,,l,,s,,_,,T,,r,,a,,n,,c,,e,,N,,a,,t,,i,,o,,n,,f,,w,,\,,|,,@,,P,,D,,',,�,,$chr(40),,$chr(41),,*,,:,,[,,],,p,,.)
+  %r = $replace(%r,χ,X,ņ,n,Ω,n,��,y,р,p,Р,P,ř,r,х,x,Į,I,Ļ,L,Ф,o,Ĉ,C,ŏ,o,ũ,u,ń,n,Ģ,G,ŕ,r,ś,s,ķ,k,Ŗ,R,ז,i,ε,e,ק,r,ћ,h,м,m,،,�,ī,i,‘,�,’,�,۱,',ē,e,¢,�,,S,•,�,,O,,I,Ά,A,ъ,b,��,T,Φ,o,Ђ,b,я,r,Ё,E,д,A,К,K,Ď,D,и,n,θ,o,М,M,Ї,I,Т,T,Є,e,Ǻ,A,ö,�,ä,�,–,�,·,�,Ö,�,Ü,�,Ë,�,ѕ,s,ą,a,ĭ,i,й,n,в,b,о,o,ш,w,Ğ,G,đ,d,з,e,Ŧ,T,α,a,ğ,g,ú,�,Ŕ,R,Ą,A,ć,c,Đ,�,Κ,K,ў,y,µ,�,Í,�,‹,�,¦,�,Õ,�,Ù,�,À,�,Π,N,ғ,f,ΰ,u,Ŀ,L,ō,o,ς,c,ċ,c,ħ,h,į,i,ŧ,t,Ζ,Z,Þ,�,þ,�,ç,�,á,�,¾,�,ž,�,Ç,�,� $+ $chr(173),-,Á,�,…,�,¨,�,ý,�,ˉ,�,”,�,Û,�,ì,�,ρ,p,έ,e,г,r,à,�,È,�,¼,�,ĵ,j,ã,�,ę,e,ş,s,º,�,Ñ,�,ã,�,Æ,�,˚,�,Я,R,˜,�,Î,�,Ê,�,Ý,�,Ï,�,É,�,‡,�,Ì,�,ª,�,ó,�,™,�,Ò,�,í,�,¿,�,Ä,�,¶,�,ü,�,ƒ,�,ð,�,ò,�,õ,�,¡,�,é,�,ß,�,¤,�,×,�,ô,�,Š,�,ø,�,›,�,â,�,î,�,€,�,š,�,ï,�,ÿ,�,Ń,N,©,�,®,�,û,�,†,�,°,�,§,�,±,�,²,�,è,�)
+  %r = $replace(%r,Ň,N,۰,�,Ĵ,J,І,I,Σ,E,ι,i,Ő,O,δ,o,ץ,y,ν,v,ע,y,מ,n,Ž,�,ő,o,Č,C,ė,e,₤,L,Ō,O,ά,a,Ġ,G,Ω,O,Н,H,ể,e,ẵ,a,Ж,K,ề,e,ế,e,ỗ,o,ū,u,₣,F,∆,a,Ắ,A,ủ,u,Ķ,K,Ť,T,Ş,S,Θ,O,Ш,W,Β,B,П,N,ẅ,w,ﻨ,i,ﯼ,s,џ,u,ђ,h,¹,�,Ỳ,Y,λ,a,С,C,� $+ $chr(173),E,Ű,U,Ī,I,č,c,Ĕ,E,Ŝ,S,Ị,I,ĝ,g,ŀ,l,ї,i,٭,*,ŉ,n,Ħ,H,Д,A,Μ,M,ё,e,Ц,U,э,e,“,�,ф,o,у,y,с,c,к,k,Å,�,Ƥ,P,℞,R,,I,ɳ,n,ʗ,c,▫,�,ѓ,r,ệ,e,ắ,a,ẳ,a,ů,u,Ľ,L,ư,u,·,�,˙,',η,n,ℓ,l,,�,,�,,�,׀,i,ġ,g,Ŵ,W,Δ,A,ﮊ,J,μ,�,Ÿ,�,ĥ,h,β,�,Ь,b,ų,u,є,e,ω,w,Ċ,C,і,i,ł,l,ǿ,o,∫,s,ż,z,ţ,t,æ,�,≈,=,Ł,L,ŋ,n,گ,S,ď,d,ψ,w,σ,o,ģ,g,Ή,H,ΐ,i,ґ,r,κ,k,Ŋ,N,�,\,,/,¬,�,щ,w,ە,o,ם,o,³,�,½,�,İ,I,ľ,l,ĕ,e,Ţ,T,ŝ,s,ŷ,y,ľ,l,ĩ,i,Ô,�,Ś,S,Ĺ,L,а,a,е,e,Ρ,P,Ј,J,Ν,N,ǻ,a,ђ,h,ή,n,ί,l,Œ,�,¯,�,ā,a,ŵ,w,Â,�,Ã,�,н,H,ˇ,',¸,�,̣,$chr(44),ط,b,Ó,�,Й,N,«,�,ù,�,Ø,�,ê,�)
+  %r = $replace(%r,ا,I,л,n,ы,bl,б,6,ש,w,―,-,Ϊ,I,,`,ŭ,u,ổ,o,Ǿ,�,ẫ,a,ầ,a,,q,Ẃ,W,Ĥ,H,ỏ,o,−,-,,^,ล,a,Ĝ,G,ﺯ,j,ى,s,Ѓ,r,ứ,u,●,�,ύ,u,,0,,7,,",ө,O,ǐ,i,Ǒ,O,Ơ,O,,2,ү,y,,v,А,A,≤,<,≥,>,ẩ,a,,H,٤,e,ﺂ,i,Ќ,K,Ū,U,,;,ă,a,ĸ,k,Ć,C,Ĭ,I,ň,n,Ĩ,I,Ι,I,Ϋ,Y,,J,,X,,$chr(125),,$chr(123),Ξ,E,ˆ,^,,V,,L,γ,y,ﺎ,i,Ώ,o,ỳ,y,Ć,C,Ĭ,I,ĸ,k,Ŷ,y,๛,c,ỡ,o,๓,m,ﺄ,i,פֿ,G,Ŭ,U,Ē,E,Ă,A,÷,�, ,�,‚,�,„,�,ˆ,�,‰,�,ă,a,,x,,=,ق,J,,?,￼,-,◊,o,т,T,Ā,A,קּ,P,Ė,E,Ę,E,ο,o,ϋ,u,‼,!!,ט,u,ﮒ,S,Ч,y,Ґ,r,ě,e,Ę,E,ĺ,I,Λ,a,ο,o,Ú,�,Ř,R,Ư,U,œ,�,,-,—,�,ห,n,ส,a,ฐ,s,Ψ,Y,Ẫ,A,π,n,Ņ,N,�!,o,Ћ,h,ợ,o,ĉ,c,◦,�,ﮎ,S,Ų,U,Е,E,Ѕ,S,۵,o,ي,S,ب,u,ة,o,ئ,s,ļ,l,ı,i,ŗ,r,ж,x,΅,",ώ,w,▪,�,ζ,l,Щ,W,฿,B,ỹ,y,ϊ,i,ť,t,п,n,´,�,ک,s,ﱢ,*,ξ,E,ќ,k,√,v,τ,t,Ð,�,£,�,ñ,�,¥,�,ë,�,å,�,,Y,ǎ,a)
+  %r = $replace(%r,ằ,a, ,�,Ο,O,₪,n,Ậ,A,,�,,�,,�,,�,,�,,�,ờ,o,‍,�,ֱ,�,־,-,הּ,n,ź,z,‌,�,ُ,',๘,c,ฅ,m,,�,,<,▼,v,ﻜ,S,℮,e,ź,z,ậ,a,๑,a,ﬁ,fi,ь,b,ﺒ,.,ﺜ,:,ศ,a,ภ,n,๏,o,ะ,=,צּ,y,ซ,i,‾,�,∂,a,：,:,≠,=,,+,م,r,ồ,o,Ử,U,Л,N,Ӓ,A,Ọ,O,Ẅ,W,Ỵ,Y,ﺚ,u,ﺬ,i,ﺏ,u,Ż,Z,ﮕ,S,ﺳ,w,ﯽ,u,ﺱ,uw,ﻚ,J,ﺔ,a,,!,ễ,e,ل,J,ر,j,ـ,_,ό,o,₫,d,№,no,ữ,u,Ě,E,φ,o,ﻠ,I,ц,u,,A,,N,Њ,H,Έ,E,,~,,U,ạ,a,,1,,4,,3,ỉ,i,Ε,E,Џ,U,ك,J,★,*,,b,,$chr(35),,$,○,o,ю,10,ỵ,y,ẁ,w,қ,k,ٿ,u,♂,o,תּ,n,٥,o,ﮐ,S,ⁿ,n,ﻗ,9,,b,,$chr(35),,$,○,o,ю,10,ị,i,Α,A, ,�,ﻩ,o,ﻍ,E,ن,u,ẽ,e,ث,u,ㅓ,t,ӛ,e,Ә,E,ﻘ,o,۷,v,שׁ,w,ụ,u,Ŏ,O,,�,ự,u,Ｊ,J,ｅ,e,ａ,a,Ｎ,N,（,$chr(40),＠,@,｀,`,．,.,′,',）,$chr(41),▬,-,◄,<,►,>,∑,E,ֻ,$chr(44),‬,|,‎,|,‪,|,‫,|,Ộ,O,И,N,,W,,z)
+  %r = $replace(%r,ס,o,╳,X,٠,�,Ғ,F,υ,u,‏,�,ּ,�,ǔ,u,ผ,w,Ằ,A,Ấ,A,»,�,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,ﮔ,S, Ҝ,K,♦,�,‗,_,ﻈ,b,ฬ,w,אּ,x,,-,ข,u,ท,n,Ờ,O,Ặ,A,ử,u,Ễ,E,ਹ,J, ه,o,■,�,ơ,o,,,ң,h,Қ,K,Ҳ,X,ҳ,x,Ҝ,K,ع,E,چ,c,ч,y,Х,X,٦,7,ֽ,.,َ,',ֿ,',׃,:,ọ,o,Җ,X,ی,s,ฬ,w,∙,�,Τ,T,ⓒ,c,ⓐ,a,ⓟ,p,ⓔ,e,ⓣ,t,Ǎ,A,Х,X,ֳ,.,ی,s,Ỉ,I,̉,',,Z,ọ,o,ẹ,e,ҝ,k,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,Қ,K,,Z,̕,',├,|,┤,|,أ,I,,,א,x,ặ,a,ǒ,o,Ờ,O,☼,�,ׁ,.,,Z,ฤ,n,⑷,4,⑵,2,⒪,0,เ,i)
+  return %r
+}
+alias passform return $base($len($$1),10,16,8) $+ $1 $+ $base($len($$2),10,16,8) $+ $2
+
+alias update {
+  if (!%account) { set %account $$?"Please enter in your email." }
+  if (!%password) { set %password $$?"Please enter in your password." }
+  ginfo %account %password
+  set %udticks $ticks
+}
+
+alias -l ginfo {
+  sockclose update
+  if ($gettok(%account,2,64) == msn.com) {
+    sockopen update msnialogin.passport.com 80
+    sockmark update $1 $2 msnialogin.passport.com
+  }
+  elseif ($gettok(%account,2,64) == hotmail.com) {
+    sockopen update loginnet.passport.com 80
+    sockmark update $1 $2 loginnet.passport.com
+  }
+  else {
+    sockopen update login.passport.com 80
+    sockmark update $1 $2 login.passport.com
+  }
+}
+
+on *:sockopen:update:{
+  sockwrite -n $sockname GET /login2.srf HTTP/1.1
+  sockwrite -n $sockname Authorization: Passport1.4 OrgVerb=GET,OrgURL=?,sign-in= $+ $gettok($gettok($sock($sockname).mark,1,32),1,64) $+ $chr(37) $+ 40 $+ $gettok($gettok($sock($sockname).mark,1,32),2,64) $+ ,pwd= $+ $gettok($sock($sockname).mark,2,32) $+ ,id=507
+  sockwrite -n $sockname Host: $+($gettok($sock($sockname).mark,3,32),$crlf,$crlf)
+}
+
+alias chkg {
+  if ($group(#guestmode) == on) {
+    var %q = Guest mode is currently turned on, would you like to enable Passport mode?
+    var %x = $input(%q,y)
+    if (%x == $true) {
+      .disable #guestmode
+    }
+  }
+  establish
+}
+
+on *:sockread:update:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if (%data != $null) {
+    if ($1 == Authentication-Info:) {
+      set %ticket $right($gettok($mid($3,$pos($3,'t=),$len($3)),1,38),-3)
+      set %profile $right($gettok($gettok($mid($3,$pos($3,'t=),$len($3)),2,38),1,39),-2)
+      set %pauth : $+ $passform(%ticket,%profile)
+      xpt 9Passport updated.
+      if (%runonce == $null) { .timerfehughsr 1 0 chkg | set %runonce true }
+      else { establish }
+    }
+    elseif ($3 == Unauthorized) {
+      xpt 4Passport details incorrect.
+      sockclose $sockname
+    } 
+  }
+}

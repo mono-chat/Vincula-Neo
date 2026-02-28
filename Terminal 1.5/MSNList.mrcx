@@ -1,0 +1,83 @@
+alias list {
+  if (!$1) { set %listcata CP }
+  elseif ($1) { set %listcata $1 }
+  unset %try
+  set %end true
+  sockwrite -tn Local : $+ $getscript(name) 811 $me :Start of ListX
+  sockopen list chat.msn.com 80
+  .timer $+ $rand(a,z) 1 30 checklist
+}
+
+alias checklist {
+  if (%end == true) {
+    sockwrite -tn Local : $+ $getscript(name) 817 :End of /LISTX
+  }
+}
+
+on *:sockopen:list:{
+  unset %next
+  if (!%try) { inc %try }
+  var %prof = GET /find.msnw?cat= $+ %listcata $+ &page= $+ %try HTTP/1.1 $crlf
+  %prof = %prof $+ Accept: */* $+ $crlf
+  %prof = %prof $+ Accept-Language: en-us $crlf
+  %prof = %prof $+ Accept-Encoding: gzip, deflate $+ $crlf
+  %prof = %prof $+ User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322) $+ $crlf
+  %prof = %prof $+ Host: chat.msn.com $+ $crlf
+  %prof = %prof $+ Connection: Keep-Alive $+ $crlf
+  %prof = %prof $+ Cookie: $sock($sockname).mark $+ $crlf
+  sockwrite $sockname %prof $+ $crlf
+}
+on *:sockread:list:{
+  var %data
+  sockread %data
+  if ($len(%data) < 900) {
+    tokenize 32 %data
+    if (%data != $null) {
+      if (<b>Next</b> isin $1-) { inc %try | set %next true }
+      if (%next == true) {
+        if ($mid($2,1,4) == </a>) { 
+          var %y = $+($chr(37),$chr(35),$replace($1,$chr(32),\b)) 
+          var %x = $mid($1-,$calc($pos($1-,</td><td class=fadedtext>) + $len(</td><td class=fadedtext>)),$len($1-))
+          var %z = $mid($1-,$calc($pos($1-,</td><td class=fadedtext>) + $len(</td><td class=fadedtext>)),$len($1-))
+          %x = $mid(%x,1,$pos(%x,</td>))
+          %z = $mid(%z,$calc($pos(%z,</td><td class=fadedtext>) + $len(</td><td class=fadedtext>)),$len(%z))
+          var %v = $mid(%z,$calc($pos(%z,<td class=fadedtext>) + $len(<td class=fadedtext>)),$len(%z))
+          %v = $mid(%v,1,$pos(%v,</td>))
+          %z = $mid(%z,1,$pos(%z,</td>))
+          %z = $left(%z,-1)
+          %v = $left(%v,-1)
+          if (%v == table>) { %v = - }
+          %x = $left(%x,-1)
+          sockwrite -tn Local : $+ $getscript(name) 812 $me %y +nt %v %z : $+ %z $getbreak %x 
+        }
+      }
+    }
+  }
+}
+
+alias getbreak return       
+
+on *:sockclose:list:{
+  sockclose $sockname
+  if (%next == true) { sockopen list chat.msn.com 80 }
+  else { unset %try | sockwrite -tn Local : $+ $getscript(name) 817 :End of /LISTX | unset %end }
+}
+
+menu status {
+  Terminal
+  .List
+  ..City Chats:{ list GE }
+  ..Computing:{ list CP }
+  ..Entertainment:{ list EA }
+  ..General:{ list GN }
+  ..Health && Medicine:{ list HE }
+  ..Interests:{ list II }
+  ..Lifestyles:{ list LF }
+  ..Music:{ list MU }
+  ..News:{ list NW }
+  ..Peers:{ list PR }
+  ..Religion:{ list RL }
+  ..Romance:{ list RM }
+  ..Sports & Recreation:{ list SP }
+  ..Chat Fans:{ list TN }
+}

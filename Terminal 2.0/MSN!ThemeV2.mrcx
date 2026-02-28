@@ -1,0 +1,578 @@
+;;MSN Theme V2 by Sky -- Designed for Terminal;;
+
+raw 352:*:{
+  echo -s ( $iif($2 == *,free sock,$2) ) $msn.decode($6) $+ ! $+ $replace($3-4,$chr(32),@) $7-
+  halt
+}
+
+raw 315:*:{
+  echo -s $replace($2,*,") $3-
+  halt
+}
+
+menu menubar {
+  MSN Theme
+  .Whispers
+  .. $+ $iif($readini(MSNTheme.ini,Whispers,Status) == Internal,$style(1),$null) $+ Internal:{ writeini MSNTheme.ini Whispers Status Internal }
+  .. $+ $iif($readini(MSNTheme.ini,Whispers,Status) == External,$style(1),$null) $+ External:{ writeini MSNTheme.ini Whispers Status External }
+  .. $+ $iif($readini(MSNTheme.ini,Whispers,Status) == Disabled,$style(1),$null) $+ Off:{ writeini MSNTheme.ini Whispers Status Disabled }
+  . $+ $iif($group(#checkprofile) == on,Internal,External) $+ : $+ { $iif($group(#checkprofile) == on,.disable #checkprofile,.enable #checkprofile) }
+}
+
+#MSNThemeV2 on
+
+;;Local Alias
+
+alias f1 {
+  editbox -a $msn.decode($editbox($active))
+}
+
+alias f2 {
+  editbox -a $msn.encode($editbox($active))
+}
+
+raw 405:*:{ echo $2 2 $+ $msnactionspace(RAW) $+ $3- | halt }
+
+
+;;Encode/Decode
+
+alias msn.decode {
+  var %r, %l 1
+  %r = $replace($1-,,B,,-,�>,-,,-,,-,,E,,C,,A,,R,,K,,y,ﺘ,i,ﺉ,s,דּ,t,טּ,u,ﻉ,e,,k,,F,,u,,g,Χ,X,,>,,$chr(37),,8,,d,,m,,h,ﻛ,s,,G,,M,,l,,s,,_,,T,,r,,a,,n,,c,,e,,N,,a,,t,,i,,o,,n,,f,,w,,\,,|,,@,,P,,D,,',,�,,$chr(40),,$chr(41),,*,,:,,[,,],,p,,.)
+  %r = $replace(%r,χ,X,ņ,n,Ω,n,��,y,р,p,Р,P,ř,r,х,x,Į,I,Ļ,L,Ф,o,Ĉ,C,ŏ,o,ũ,u,ń,n,Ģ,G,ŕ,r,ś,s,ķ,k,Ŗ,R,ז,i,ε,e,ק,r,ћ,h,м,m,،,�,ī,i,‘,�,’,�,۱,',ē,e,¢,�,,S,•,�,,O,,I,Ά,A,ъ,b,��,T,Φ,o,Ђ,b,я,r,Ё,E,д,A,К,K,Ď,D,и,n,θ,o,М,M,Ї,I,Т,T,Є,e,Ǻ,A,ö,�,ä,�,–,�,·,�,Ö,�,Ü,�,Ë,�,ѕ,s,ą,a,ĭ,i,й,n,в,b,о,o,ш,w,Ğ,G,đ,d,з,e,Ŧ,T,α,a,ğ,g,ú,�,Ŕ,R,Ą,A,ć,c,Đ,�,Κ,K,ў,y,µ,�,Í,�,‹,�,¦,�,Õ,�,Ù,�,À,�,Π,N,ғ,f,ΰ,u,Ŀ,L,ō,o,ς,c,ċ,c,ħ,h,į,i,ŧ,t,Ζ,Z,Þ,�,þ,�,ç,�,á,�,¾,�,ž,�,Ç,�,� $+ $chr(173),-,Á,�,…,�,¨,�,ý,�,ˉ,�,”,�,Û,�,ì,�,ρ,p,έ,e,г,r,à,�,È,�,¼,�,ĵ,j,ã,�,ę,e,ş,s,º,�,Ñ,�,ã,�,Æ,�,˚,�,Я,R,˜,�,Î,�,Ê,�,Ý,�,Ï,�,É,�,‡,�,Ì,�,ª,�,ó,�,™,�,Ò,�,í,�,¿,�,Ä,�,¶,�,ü,�,ƒ,�,ð,�,ò,�,õ,�,¡,�,é,�,ß,�,¤,�,×,�,ô,�,Š,�,ø,�,›,�,â,�,î,�,€,�,š,�,ï,�,ÿ,�,Ń,N,©,�,®,�,û,�,†,�,°,�,§,�,±,�,²,�,è,�)
+  %r = $replace(%r,Ň,N,۰,�,Ĵ,J,І,I,Σ,E,ι,i,Ő,O,δ,o,ץ,y,ν,v,ע,y,מ,n,Ž,�,ő,o,Č,C,ė,e,₤,L,Ō,O,ά,a,Ġ,G,Ω,O,Н,H,ể,e,ẵ,a,Ж,K,ề,e,ế,e,ỗ,o,ū,u,₣,F,∆,a,Ắ,A,ủ,u,Ķ,K,Ť,T,Ş,S,Θ,O,Ш,W,Β,B,П,N,ẅ,w,ﻨ,i,ﯼ,s,џ,u,ђ,h,¹,�,Ỳ,Y,λ,a,С,C,� $+ $chr(173),E,Ű,U,Ī,I,č,c,Ĕ,E,Ŝ,S,Ị,I,ĝ,g,ŀ,l,ї,i,٭,*,ŉ,n,Ħ,H,Д,A,Μ,M,ё,e,Ц,U,э,e,“,�,ф,o,у,y,с,c,к,k,Å,�,Ƥ,P,℞,R,,I,ɳ,n,ʗ,c,▫,�,ѓ,r,ệ,e,ắ,a,ẳ,a,ů,u,Ľ,L,ư,u,·,�,˙,',η,n,ℓ,l,,�,,�,,�,׀,i,ġ,g,Ŵ,W,Δ,A,ﮊ,J,μ,�,Ÿ,�,ĥ,h,β,�,Ь,b,ų,u,є,e,ω,w,Ċ,C,і,i,ł,l,ǿ,o,∫,s,ż,z,ţ,t,æ,�,≈,=,Ł,L,ŋ,n,گ,S,ď,d,ψ,w,σ,o,ģ,g,Ή,H,ΐ,i,ґ,r,κ,k,Ŋ,N,�,\,,/,¬,�,щ,w,ە,o,ם,o,³,�,½,�,İ,I,ľ,l,ĕ,e,Ţ,T,ŝ,s,ŷ,y,ľ,l,ĩ,i,Ô,�,Ś,S,Ĺ,L,а,a,е,e,Ρ,P,Ј,J,Ν,N,ǻ,a,ђ,h,ή,n,ί,l,Œ,�,¯,�,ā,a,ŵ,w,Â,�,Ã,�,н,H,ˇ,',¸,�,̣,$chr(44),ط,b,Ó,�,Й,N,«,�,ù,�,Ø,�,ê,�)
+  %r = $replace(%r,ا,I,л,n,ы,bl,б,6,ש,w,―,-,Ϊ,I,,`,ŭ,u,ổ,o,Ǿ,�,ẫ,a,ầ,a,,q,Ẃ,W,Ĥ,H,ỏ,o,−,-,,^,ล,a,Ĝ,G,ﺯ,j,ى,s,Ѓ,r,ứ,u,●,�,ύ,u,,0,,7,,",ө,O,ǐ,i,Ǒ,O,Ơ,O,,2,ү,y,,v,А,A,≤,<,≥,>,ẩ,a,,H,٤,e,ﺂ,i,Ќ,K,Ū,U,,;,ă,a,ĸ,k,Ć,C,Ĭ,I,ň,n,Ĩ,I,Ι,I,Ϋ,Y,,J,,X,,$chr(125),,$chr(123),Ξ,E,ˆ,^,,V,,L,γ,y,ﺎ,i,Ώ,o,ỳ,y,Ć,C,Ĭ,I,ĸ,k,Ŷ,y,๛,c,ỡ,o,๓,m,ﺄ,i,פֿ,G,Ŭ,U,Ē,E,Ă,A,÷,�, ,�,‚,�,„,�,ˆ,�,‰,�,ă,a,,x,,=,ق,J,,?,￼,-,◊,o,т,T,Ā,A,קּ,P,Ė,E,Ę,E,ο,o,ϋ,u,‼,!!,ט,u,ﮒ,S,Ч,y,Ґ,r,ě,e,Ę,E,ĺ,I,Λ,a,ο,o,Ú,�,Ř,R,Ư,U,œ,�,,-,—,�,ห,n,ส,a,ฐ,s,Ψ,Y,Ẫ,A,π,n,Ņ,N,�!,o,Ћ,h,ợ,o,ĉ,c,◦,�,ﮎ,S,Ų,U,Е,E,Ѕ,S,۵,o,ي,S,ب,u,ة,o,ئ,s,ļ,l,ı,i,ŗ,r,ж,x,΅,",ώ,w,▪,�,ζ,l,Щ,W,฿,B,ỹ,y,ϊ,i,ť,t,п,n,´,�,ک,s,ﱢ,*,ξ,E,ќ,k,√,v,τ,t,Ð,�,£,�,ñ,�,¥,�,ë,�,å,�,,Y,ǎ,a)
+  %r = $replace(%r,ằ,a, ,�,Ο,O,₪,n,Ậ,A,,�,,�,,�,,�,,�,,�,ờ,o,‍,�,ֱ,�,־,-,הּ,n,ź,z,‌,�,ُ,',๘,c,ฅ,m,,�,,<,▼,v,ﻜ,S,℮,e,ź,z,ậ,a,๑,a,ﬁ,fi,ь,b,ﺒ,.,ﺜ,:,ศ,a,ภ,n,๏,o,ะ,=,צּ,y,ซ,i,‾,�,∂,a,：,:,≠,=,,+,م,r,ồ,o,Ử,U,Л,N,Ӓ,A,Ọ,O,Ẅ,W,Ỵ,Y,ﺚ,u,ﺬ,i,ﺏ,u,Ż,Z,ﮕ,S,ﺳ,w,ﯽ,u,ﺱ,uw,ﻚ,J,ﺔ,a,,!,ễ,e,ل,J,ر,j,ـ,_,ό,o,₫,d,№,no,ữ,u,Ě,E,φ,o,ﻠ,I,ц,u,,A,,N,Њ,H,Έ,E,,~,,U,ạ,a,,1,,4,,3,ỉ,i,Ε,E,Џ,U,ك,J,★,*,,b,,$chr(35),,$,○,o,ю,10,ỵ,y,ẁ,w,қ,k,ٿ,u,♂,o,תּ,n,٥,o,ﮐ,S,ⁿ,n,ﻗ,9,,b,,$chr(35),,$,○,o,ю,10,ị,i,Α,A, ,�,ﻩ,o,ﻍ,E,ن,u,ẽ,e,ث,u,ㅓ,t,ӛ,e,Ә,E,ﻘ,o,۷,v,שׁ,w,ụ,u,Ŏ,O,,�,ự,u,Ｊ,J,ｅ,e,ａ,a,Ｎ,N,（,$chr(40),＠,@,｀,`,．,.,′,',）,$chr(41),▬,-,◄,<,►,>,∑,E,ֻ,$chr(44),‬,|,‎,|,‪,|,‫,|,Ộ,O,И,N,,W,,z)
+  %r = $replace(%r,ס,o,╳,X,٠,�,Ғ,F,υ,u,‏,�,ּ,�,ǔ,u,ผ,w,Ằ,A,Ấ,A,»,�,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,ﮔ,S, Ҝ,K,♦,�,‗,_,ﻈ,b,ฬ,w,אּ,x,,-,ข,u,ท,n,Ờ,O,Ặ,A,ử,u,Ễ,E,ਹ,J, ه,o,■,�,ơ,o,,,ң,h,Қ,K,Ҳ,X,ҳ,x,Ҝ,K,ع,E,چ,c,ч,y,Х,X,٦,7,ֽ,.,َ,',ֿ,',׃,:,ọ,o,Җ,X,ی,s,ฬ,w,∙,�,Τ,T,ⓒ,c,ⓐ,a,ⓟ,p,ⓔ,e,ⓣ,t,Ǎ,A,Х,X,ֳ,.,ی,s,Ỉ,I,̉,',,Z,ọ,o,ẹ,e,ҝ,k,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,Қ,K,,Z,̕,',├,|,┤,|,أ,I,,,א,x,ặ,a,ǒ,o,Ờ,O,☼,�,ׁ,.,,Z,ฤ,n,⑷,4,⑵,2,⒪,0,เ,i,ﻞ,J)
+  return %r
+}
+alias msn.encode {
+  msn.enchash
+  var %x, %l 1
+  while (%l <= $len($1-)) {
+    if ($hget(msn.enc,$mid($1-,%l,1)) != $null) %x = %x $+ $hget(msn.enc,$mid($1-,%l,1))
+    else {
+      if ($mid($1,%l,1) != $chr(32)) %x = %x $+ $mid($1-,%l,1)
+      else %x = %x $mid($1-,%l,1)
+    }
+    inc %l
+  }
+  return %x
+}
+
+alias msn.enchash {
+  var %in � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � � �
+  var %out € ‚ ƒ „ … † ‡ ˆ ‰ Š ‹ Œ Ž ‘ ’ “ ” • – — ˜ ™ š › œ ž Ÿ   ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ µ ¶ · ¸ ¹ º » ¼ ½ ¾ ¿ À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö × Ø Ù Ú Û Ü Ý Þ ß à á â ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö ÷ ø ù ú û ü ý þ ÿ
+  var %l 1
+  if ($hget(msn.enc)) hfree msn.enc
+  hmake msn.enc 13
+  while (%l <= 123) {
+    hadd msn.enc $gettok(%in,%l,32) $gettok(%out,%l,32)
+    inc %l
+  }
+}
+
+alias mylevel {
+  if (!$2) {
+    var %level
+    if ($nick isowner $$1) { %level = OWNER }
+    elseif ($nick !isowner $$1) && ($nick isop $$1) && ($nick !isreg $$1) { %level = HOST }
+    elseif ($nick !isowner $$1) && ($nick !isop $$1) && ($nick isreg $$1) { %level = PARTICIPANT }
+    else { %level = PARTICIPANT }
+    return %level
+  }
+  elseif ($2) {
+    var %level
+    if ($$1 isowner $$2) { %level = OWNER }
+    elseif ($$1 !isowner $$2) && ($$1 isop $$2) && ($$1 !isreg $$2) { %level = HOST }
+    elseif ($$1 !isowner $$2) && ($$1 !isop $$2) && ($$1 isreg $$2) { %level = PARTICIPANT }
+    else { %level = PARTICIPANT }
+    return %level
+  }
+}
+
+alias msnactionspace {
+  if ($1 == JOIN) { return $str(�,8) }
+  if ($1 == PART) { return $str(�,8) }
+  if ($1 == TOPIC) { return $str(�,4) }
+  if ($1 == RAW) { return $str(�,4) }
+  if ($1 == PRIVMSG) { return $str(�,16) }
+  if ($1 == USERMODE) { return $str(�,10) }
+  if ($1 == AWAY) { return $str(�,6) }
+  if ($1 == KICK) { return $str(�,10) }
+  if ($1 == KNOCK) { return $str(�,6) }
+  if ($1 == ME) { return $str(�,6) }
+}
+
+alias getcolour {
+  if ($1 == JOIN) { return 14 }
+  if ($1 == PART) { return 14 }
+  if ($1 == QUIT) { return 2 }
+  if ($1 == PRIVMSG) { return 14 }
+  if ($1 == MODE) { return 14 }
+  if ($1 == KICK) { return 4 }
+  if ($1 == PARTICIPANT) { return 12 }
+  if ($1 == HOST) { return 5 }
+  if ($1 == OWNER) { return 8 }
+  if ($1 == MALE) { return 2 }
+  if ($1 == FEMALE) { return 6 }
+  if ($1 == NEITHER) { return 10 }
+}
+
+alias getgender {
+  if ($hget(GENDER,$$1) != $null) {
+    return $getcolour($hget(GENDER,$$1))
+  }
+  else return $getcolour(NEITHER)
+}
+
+;;Remote Alias
+
+alias msg {
+  if ($2) {
+    echo $$1  $+ $getcolour($mylevel($me,$$1)) $+ � $+ $getgender($me) $+ � $msnactionspace(PRIVMSG) $+ $getcolour(PRIVMSG) $+ 2 $msn.decode($me) 1: $2-
+    .msg $$1 $2-
+  }
+}
+
+;;Whispers
+
+alias whisper {
+  if ($me ison $active) {
+    var %i = 1, %whis = $numtok($snicks,44)
+    if (%whis == 0) { %whis = 1 }
+    while (%i <= %whis) {
+      echo $active  $+ $getcolour($mylevel($me,$active)) $+ � $+ $getgender($me) $+ � $msnactionspace(PRIVMSG) 2 $+ $msn.decode($me) 6whispers to1 $msn.decode($gettok($snicks,%i,44)) $+ 1  : $1-
+      .raw whisper $active $gettok($snicks,%i,44) : $+ $1-
+      inc %i
+    }
+    halt
+  }
+}
+
+raw WHISPER:*:{
+  if ($dialog(Whisper $+ $nick)) { 
+    if ($dialog(Whisper $+ $nick).active == $false) { echo -a 6 $+ $msnactionspace(TOPIC) You have received a whisper from 1 $+ $nick }
+    did -a Whisper $+ $nick 1 $msn.decode($nick) : $iif($3 != S,$3-,$left($5-,-1)) $+ $crlf
+  }
+  elseif ($readini(MSNTheme.ini,Whispers,Status) == External) {
+    echo $$1  $+ $getcolour($mylevel($nick,$$1)) $+ � $+ $getgender($nick) $+ � $msnactionspace(PRIVMSG) 2 $+ $msn.decode($nick) 6whispers to1 $msn.decode($me) $+ 1  : $iif($3 != S,$3-,$left($5-,-1))
+  }
+  elseif ($readini(MSNTheme.ini,Whispers,Status) == Internal) {
+    initiatewhisper $nick $$1
+    did -a Whisper $+ $nick 1 $msn.decode($nick) : $iif($3 != S,$3-,$left($5-,-1)) $+ $crlf
+  }
+  if ($readini(MSNTheme.ini,Whispers,Status) == Disabled) {
+    .raw whisper $$1 $nick :ERR NOUSERWHISPER
+    halt
+  }
+  halt
+}
+
+;;Joins
+
+on ^*:JOIN:#:{
+  inc -u2 %join. [ $+ [ # ] ]
+  if (%join. [ $+ [ # ] ] <= 7) {
+    echo # $getcolour(join) $+ $msnactionspace(join) $msn.decode($nick) Has joined the conversation.
+    haltdef
+  }
+  elseif (%join. [ $+ [ # ] ] > 7) {
+    haltdef
+  }
+}
+
+;;Parts
+
+on ^*:PART:#:{
+  if ($gettok(%quit. [ $+ [ $ial($nick) ] ],1,32) == #) {
+    echo # $getcolour(quit) $+ $msnactionspace(part) $msn.decode($nick) Has quit the conversation. ( $+ $gettok(%quit. [ $+ [ $ial($nick) ] ],2-,32) $+ )
+    haltdef
+  }
+  else {
+    inc -u2 %part. [ $+ [ # ] ]
+    if (%part. [ $+ [ # ] ] <= 7) {
+      echo # $getcolour(part) $+ $msnactionspace(part) $msn.decode($nick) Has left the conversation.
+      haltdef
+    }
+    elseif (%part. [ $+ [ # ] ] > 7) {
+      haltdef
+    }
+  }
+}
+
+;;Privmsg
+
+on ^*:TEXT:*:#:{
+  if ($nick == #) { .echo # �3  $1- }
+  else {
+    echo #  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(PRIVMSG) $getcolour(PRIVMSG) $+ $msn.decode($nick) 1: $1-
+  }
+  haltdef
+}
+
+on ^*:TEXT:*:?:{
+  echo $nick  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(PRIVMSG) $getcolour(PRIVMSG) $+ $msn.decode($nick) 1: $1-
+  haltdef
+}
+
+;;Actions
+
+on ^*:ACTION:*:#:{
+  .echo # 6 $+ $msnactionspace(ME) $msn.decode($nick) $1-  
+  halt
+}
+
+alias mechn {
+  .echo $1 6 $+ $msnactionspace(ME) $msn.decode($me) $+  $1-
+  .privmsg $1 ACTION $1- $+ 
+}
+
+alias me {
+  .echo # 6 $+ $msnactionspace(ME) $msn.decode($me) $+  $1-
+  .privmsg # ACTION $1- $+ 
+}
+
+alias action {
+  .echo # 6 $+ $msnactionspace(ME) $msn.decode($me) $+  $1-
+  .privmsg # ACTION $1- $+ 
+}
+
+;;View Profile
+
+raw 818:*:{
+  if ($3 == PUID) { 
+    if ($group(#checkprofile) != on) {
+      run iexplore.exe http://members.msn.ca/?mpp= $+ $4- 
+      halt 
+    }
+  }
+}
+
+raw 819:*:{
+  halt
+}
+
+
+;;Knocks
+
+raw knock:*:{
+  var %reason
+  if ($2 == 913) { %reason = Access Denied. }
+  elseif ($2 == 473) { %reason = Invite Only. }
+  echo $1 6 $+ $msnactionspace(KNOCK) $msn.decode($nick) is knocking ( $+ %reason $+ )
+  halt
+}
+
+;Away
+
+raw 822:*:{
+  if ($getterminal(awayflood) == on) {
+    inc -u12 %awayflood. [ $+ [ $1 ] ] [ $+ [ . ] ] [ $+ [ $nick ] ]
+    if (%awayflood. [ $+ [ $1 ] ] [ $+ [ . ] ] [ $+ [ $nick ] ] = 5) && ($nick !isowner $1) && ($me isowner $1) {
+      sockwrite $hget(channels,$1) $+(access $1 add deny $ial($nick).addr 5 :Away Flood,$lf,kick $1 $nick :Away Flood[5min ban],$crlf)
+    }
+  }
+  echo $1 $msnactionspace(AWAY) 14 $+ $msn.decode($nick) is away. ( $+ $2- $+ )
+  halt
+}
+
+raw 821:*:{
+  echo $1 $msnactionspace(AWAY) 14 $+ $msn.decode($nick) has returned.
+  if ($getterminal(awayflood) == on) {
+    inc -u12 %awayflood. [ $+ [ $1 ] ] [ $+ [ . ] ] [ $+ [ $nick ] ]
+    if (%awayflood. [ $+ [ $1 ] ] [ $+ [ . ] ] [ $+ [ $nick ] ] = 5) && ($nick !isowner $1) && ($me isowner $1) {
+      sockwrite $hget(channels,$1) $+(access $1 add deny $ial($nick).addr 5 :Return Flood,$lf,kick $1 $nick :Return Flood[5min ban],$crlf)
+    }
+  }
+  halt
+}
+
+
+
+raw 306:*:{ if ($me ison $2) { echo $2 $msnactionspace(AWAY) 14 $+ You have been marked as being away. } | halt }
+
+raw 305:*:{ if ($me ison $2) { echo $2 $msnactionspace(AWAY) 14 $+ You are no longer marked as being away. } | halt }
+
+;;Input
+
+on *:INPUT:#:{ 
+  if ($left($1,1) == + || $left($1,1) == -) && ($len($1) == 2) && ($me isop # || $me isowner #) {
+    mode $active $1
+    halt
+  }
+  if ($mid($1,1,1) != /) { 
+    .msg $active $1-
+    haltdef
+  }
+}
+
+on *:INPUT:?:{ 
+  if ($mid($1,1,1) != /) { 
+    .msg $active $1-
+    haltdef
+  }
+}
+
+;;Mode
+
+on ^*:rawMODE:#:{
+  ;$1 == + $2 == nick
+  if (!$2) {
+    if ($len($1) == 2) {
+      echo #  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(USERMODE) $getcolour(MODE) $msn.decode($nick) Has set mode $1
+    }
+    else {
+      echo #  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(USERMODE) $getcolour(MODE) $msn.decode($nick) Has set modes $1
+    }
+  }
+  elseif ($1 == +l) || ($1 == +k) || ($1 == -k)  {
+    echo #  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(USERMODE) $getcolour(MODE) $msn.decode($nick) Has set modes $1-
+  }
+  elseif ($2) {
+    var %level
+    var %vows = a,e,i,o,u
+    var %i = 1
+    if ($1 == +q) { %level = Owner. }
+    elseif ($1 == -q) { %level = Participant. }
+    elseif ($1 == +o) { %level = Host. }
+    elseif ($1 == -o) { %level = Participant. }
+    elseif ($1 == -v) { %level = Spectator. }
+    elseif ($1 == +v) { %level = Speaker. }
+    else halt
+    var %end = a
+    while (%i <= $numtok(%vows,44)) {
+      if ($gettok(%vows,%i,44) == $lower($mid(%level,1,1))) { %end = an }
+      inc %i
+    }
+    echo #  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(USERMODE) $getcolour(MODE) $msn.decode($nick) Has made $msn.decode($2) %end %level
+  }
+  haltdef
+}
+
+;;Kick
+
+on ^*:KICK:#:{
+  if (%kill. [ $+ [ $ial($nick) ] ] == #) { 
+    echo #  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(KICK) $getcolour(KICK) $msn.decode($nick) Has killed $msn.decode($knick) out of the chatroom. ( $+ $1- $+ )
+    set -u2 %noclose. [ $+ [ # ] ] true
+  }
+  else {
+    echo #  $+ $getcolour($mylevel($nick,#)) $+ � $+ $getgender($nick) $+ � $msnactionspace(KICK) $getcolour(KICK) $msn.decode($nick) Has kicked $msn.decode($knick) out of the chatroom. ( $+ $1- $+ 4,0)
+  }
+  haltdef
+}
+
+;;Topic
+
+raw 332:*:{
+  echo $2 $msnactionspace(TOPIC) 10The chat's topic is:1 $3-
+  halt 
+}
+
+on ^*:TOPIC:#:{
+  .echo # $msnactionspace(TOPIC) 10The chat's topic has changed to: 1 $1- 1( $+ $msn.decode($nick) $+ )
+  halt
+}
+
+raw prop:*:{
+  if ($2 != ownerkey) && ($2 != hostkey) {
+    .echo $1 $msnactionspace(TOPIC) 14 $+ $nick Has propped the $lower($2) to1 $3-
+  }
+  halt
+}
+
+
+;;Whisper Dialog
+
+alias initiatewhisper {
+  if ($dialog(Whisper $+ $$1)) { dialog -v Whisper $+ $$1 | halt }
+  set -u1 %newwhisper $$1
+  set -u1 %newwhisperchan $$2
+  dialog -md Whisper $+ $$1 Whisper
+}
+
+on *:dialog:Whisper*:init:0:{
+  if ($dname == Whisper $+ %newwhisper) {
+    dialog -t $dname $msn.decode($remove($dname,Whisper))
+    did -a $dname 6 To: $msn.decode($ial($remove($dname,Whisper))) $lf $+ Chan: %newwhisperchan
+    did -a $dname 8 %newwhisperchan
+  }
+}
+
+on *:dialog:Whisper*:edit:5:{
+  if ($did($dname,5).text == $null) && ($gettok($did($dname,2).text,2,32) != $shortfn($mircdirAntiWhisper.png)) { did -g $dname 2 0 $shortfn($mircdirAntiWhisper.png) }
+  elseif ($did($dname,5).text != $null) && ($gettok($did($dname,2).text,2,32) != $shortfn($mircdirWhisper.png)) { did -g $dname 2 0 $shortfn($mircdirWhisper.png) }
+}
+
+on *:dialog:Whisper*:edit:1:{
+  echo -s $numtok($did($dname,5).text,255)
+}
+
+on *:dialog:Whisper*:sclick:7:{
+  if ($did($dname,5).text != $null) {
+    .raw whisper $did($dname,8).text $remove($dname,Whisper) : $+ $did($dname,5).text
+    did -a $dname 1 $msn.decode($me) : $did($dname,5).text $+ � $+ $crlf
+    did -r $dname 5
+    did -g $dname 2 0 $shortfn($mircdirAntiWhisper.png) 
+  }
+}
+
+on *:dialog:Whisper*:sclick:2:{
+  if ($did($dname,5).text != $null) {
+    .raw whisper $did($dname,8).text $remove($dname,Whisper) : $+ $did($dname,5).text
+    did -a $dname 1 $msn.decode($me) : $did($dname,5).text $+ � $+ $crlf
+    did -r $dname 5
+    did -g $dname 2 0 $shortfn($mircdirAntiWhisper.png) 
+  }
+}
+
+dialog Whisper {
+  title ""
+  size -1 -1 193 113
+  option dbu
+  icon $mircdirIcon_1.ico, 0
+  edit "", 5, 5 97 139 11, autohs
+  edit "", 1, 2 18 190 72, multi autovs vsbar
+  icon 2, 146 96 45 13,  $mircdirAntiWhisper.png, 0
+  box "", 4, 1 90 191 22
+  text "To:", 6, 3 2 188 15
+  button "", 7, 5000 5000 1 1, default
+  text "", 8, 5000 5000 1 1
+}
+
+;;Menu System
+alias getnbin {
+  var %bvv
+  var %i = 1
+  while (%i <= $len($1-)) {
+    %bvv = %bvv $asc($mid($1-,%i,1))
+    inc %i
+  }
+  return %bvv
+}
+
+alias gcolor {
+  var %i = 1
+  var %output
+  while (%i <= $len($1-)) {
+    %output = $+(%output,,$rand(1,15),$mid($1-,%i,1))
+    inc %i
+  }
+  return %output
+}
+
+alias check {
+  if ($1) { 
+    .ctcp $1 TIME
+    .ctcp $1 PING
+    .ctcp $1 VERSION
+    .ctcp $1 FINGER
+    .ctcp $1 ISITVINCULA
+  }
+  elseif (!$1) {
+    .ctcp $snicks TIME
+    .ctcp $snicks PING
+    .ctcp $snicks VERSION
+    .ctcp $snicks FINGER
+    .ctcp $snicks ISITVINCULA
+  }
+}
+on *:CTCPREPLY:*:{
+  var %time
+  if ($1 == PING) { %time = $calc($gettok($time,3,58) - $gettok($time($2),3,58)) }
+  if ($nick ison $active) {
+    echo -a ������ 14<- $upper($mid($1,1,1)) $+ $lower($mid($1,2,$len($1))) Ctcp reply from $nick ( $+ $iif($1 == PING,%time Sec,$2-) $+ )
+  }
+  else {
+    echo $comchan($nick,1) ������ 14<- $upper($mid($1,1,1)) $+ $lower($mid($1,2,$len($1))) Ctcp reply from $nick ( $+ $iif($1 == PING,%time Sec,$2-) $+ )
+  }
+  halt
+}
+
+alias getmenunick {
+  if ($1 == begin) { return - }
+  if ($1 <= $nick($2,0)) { return $msn.decode($nick($2,$1)) $+ : $+ sline -s $chr(37) $+ $remove($2,$chr(37)) $nick($2,$1)
+    if ($1 == end) { return - }
+  }
+}
+menu menubar,status {
+  Terminal
+  .Extra
+  .. $+ $iif($getterminal(awayflood) == on,$style(1),$null) $+ Away Flood Protection:{ $iif($getterminal(awayflood) == on,setterminal awayflood off,setterminal awayflood on) }
+}
+menu nicklist {
+  $msn.decode($snicks)
+  .Commands
+  ..Copy:{ clipboard $snicks }
+  ..Findu:{ findu $snick(#,1) }
+  ..Whois:{ 
+    var %i = 1
+    while (%i <= $numtok($snicks,44)) {
+      whois $gettok($snicks,%i,44)
+      inc %i
+    }
+  }
+  ..SocketIdent:{ 
+    var %i = 1
+    while (%i <= $numtok($snicks,44)) {
+      sockwrite -tn $hget(channels,#) WHOIS $gettok($snicks,%i,44)
+      inc %i
+    }
+  }
+  ..Check:{ check $snick(#,1) }
+  ..RewtCheck:{ PRIVMSG $snicks DCC Get }
+  .Extra
+  ..BinvarMakeParticipant:{ 
+    bset &temp 1 77 79 68 69 32 $getnbin(#) 32 45 113 32 $getnbin($snick(#,1)) 10 80 82 79 80 32 $getnbin(#) 32 79 87 78 69 82 75 69 89 32 $getnbin($rand(a,z)) 10 65 67 67 69 83 83 32 $getnbin(#) 32 67 76 69 65 82 32 79 87 78 69 82 13 10
+    sockwrite $hget(channels,#) &temp
+  }
+  ..NormMakeParticipant:{
+    sockwrite $hget(channels,#) $+(MODE # -q $snick(#,1),$lf,PROP # OWNERKEY $rand(a,z),$crlf)
+  }
+  ..OpFun:{ mode $active +o-o+o-o+o-o+o-o+o-o+o $str($snicks $+ $chr(32),$len(ooooooooooo)) }
+  ..sOpFun:{ mode $active +o-v+o+v+o-v+o+v+o-v+o $str($snicks $+ $chr(32),$len(ooooooooooo)) }
+  ..SlapWholeChan:{ var %i = 1 | while (%i <= $nick($active,0)) { me Slaps $gcolor($nick($active,%i)) | inc %i } }
+  ..MakeHost:{ sockwrite -n $hget(channels,#) $+(access # clear owner,$lf,prop # ownerkey $rand(a,z) $+ $rand(a,z),$lf,MODE # +,$str(o,$numtok($snicks,44)) $replace($snicks,$chr(44),$chr(32)),$lf,prop # ownerkey $rand(a,z) $+ $rand(a,z)) }
+  Encode
+  .$submenu($getmenunick($1,$active))
+  -
+  &Whisper:{ whois $snick(#,1) | initiatewhisper $snick(#,1) # }
+  &View Profile:{ 
+    var %i = 1
+    while (%i <= $numtok($snicks,44)) {
+      prop $gettok($snicks,%i,44) PUID 
+      inc %i
+    }
+  }
+  -
+  &Kick
+  .&Disruptive Behaviour:{ kick # $snicks Disruptive Behaviour }
+  .&Profanity:{ kick # $snicks Using Profanity in the Chatroom }
+  .&Scrolling:{ kick # $snicks Scrolling in the Chatroom }
+  .&Other Reason:{ kick # $snicks $$?"Please enter in a reason." } 
+  .&Kick:{ kick # $snicks $snicks }
+  -
+  &Owner:{ mode # + $+ $str(q,$numtok($snicks,44)) $replace($snicks,$chr(44),$chr(32)) }
+  &Host:{ mode # + $+ $str(o,$numtok($snicks,44)) $replace($snicks,$chr(44),$chr(32)) }
+  &Participant:{ 
+    if ($me isowner #) {
+      mode # - $+ $str(q,$numtok($snicks,44)) $replace($snicks,$chr(44),$chr(32)) 
+    }
+    elseif ($me isop #) {
+      mode # - $+ $str(o,$numtok($snicks,44)) $replace($snicks,$chr(44),$chr(32)) 
+    }
+  }
+  & $+ $iif($snick(#,1) isvo #,Spectator,Speaker) $+ :{ 
+    var %i = 1
+    var %modes
+    while (%i <= $numtok($snicks,44)) {
+      %modes = %modes $+ $iif($gettok($snicks,%i,44) isvo #,-,+) $+ v
+      inc %i
+    }
+    sockwrite -tn $hget(channels,#) mode # %modes $replace($snicks,$chr(44),$chr(32))
+  }
+}
+
+
+#MSNThemeV2 end

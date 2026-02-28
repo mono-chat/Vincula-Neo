@@ -1,0 +1,94 @@
+;;;;Underground Distrabuted scripts;;;;
+
+;;;;Encode / Decode;;;;
+
+alias getalgbin {
+  var %bvv
+  var %i = 1
+  while (%i <= $len($1-)) {
+    %bvv = %bvv $calc($asc($mid($1-,%i,1)) / 10 * 20)
+    inc %i
+  }
+  return %bvv
+}
+alias encode {
+  msg # &xsnd $+ $getalgbin($1-)
+  .notice $me message sent: $1-
+}
+
+on *:TEXT:&xsnd*:#:{
+  .notice $me bvar-encode from $nick $+ : $bvar2text($right($1-,-5))
+}
+
+alias bvar2text {
+  var %i = 1
+  var %output
+  while (%i <= $numtok($1-,32)) {
+    %output = %output $+ $chr($calc($gettok($1-,%i,32) / 20 * 10)) $+ $chr(32)
+    inc %i
+  }
+  return %output
+}
+
+;;;;Entry (Knock Check);;;;
+
+;;;;Comments: Dont think you're smart by changing this and using &&
+;;;;I done this how I wanted it so dont snob around...
+;;;;Note: make sure you do a who on join in the rooms
+
+alias addunderground {
+  writeini -n Underground.ini Address $ial($$1).addr $$1
+  writeini -n Underground.ini Nickname $$1 $ial($$1).addr 
+}
+
+alias remunderground {
+  remini Underground.ini Address $ial($$1).addr
+  remini Underground.ini Address $$1
+}
+
+raw knock:*:{
+  if ($+($chr(37),$chr(35),Underground) == $1) {
+    if ($readini(Underground.ini,Address,$ial($nick).addr) != $null) {
+      if ($me isowner $1) {
+        access $1 add owner $ial($nick).addr 0 :Underground Entry Granted
+      }
+    }
+  }
+}
+
+;;;;;You can change this...
+
+menu nicklist {
+  $iif(# == $+($chr(37),#Underground),Underground,$null)
+  .Add:{ addunderground $gettok($snicks,1,44) }
+  .Remove
+  ..$submenu($getunderground($1))
+}
+
+alias getunderground {
+  if ($1 == begin) { return - }
+  if ($1 <= $ini(Underground.ini,Nickname,0)) { return $ini(Underground.ini,Nickname,$1) $+ : $+ remunderground $ini(Underground.ini,Nickname,$1) }
+  if ($1 == end) { return - }
+}
+
+on *:rawMode:#:{
+  if ($+($chr(37),$chr(35),Underground) == #) {
+    if ($1 == -u) && ($nick != $me) && ($me isowner #) { mode # +u }
+  }
+}
+
+on *:TEXT:*:#:{
+  if ($+($chr(37),$chr(35),Unknown) == #) {
+    if (cyber isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (sex isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (cum isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (naked isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (wank isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (cock isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (jew isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (nigger isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (slut isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (fuck*me isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+    elseif (*up*ass* isin $strip($1-)) { access # add deny $nick | kick # $nick No... }
+  }
+}

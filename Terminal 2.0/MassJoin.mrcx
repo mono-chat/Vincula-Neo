@@ -1,0 +1,86 @@
+;Mass join that I created in 5mins(Especially for Loc) ~ Sky
+
+
+menu status {
+  Mass Join
+  .Add Room:{ addroom $$?"Please enter in the desired room name"  }
+  .Rem Room
+  ..$submenu($remroom($1))
+  .List Join
+  ..$submenu($listroom($1))
+  .Massjoin:{ m_join }
+}
+
+alias ma {
+  var %i = 1
+  echo -a Mass adding channels...
+  while (%i <= $chan(0)) {
+    addroom $chan(%i)
+    echo -a Mass added $chan(%i)
+    inc %i
+  }
+  echo -a Finished mass add...
+}
+
+alias incstack {
+  inc %room.stack
+}
+
+alias decstack {
+  dec %room.stack
+}
+
+alias findroom {
+  var %i = 1
+  while (%i <= %room.stack) {
+    if ($remove(%room.stack.count. [ $+ [ %i ] ],$chr(37)) == $1) { return %i | %i = %room.stack }
+    inc %i
+  }
+}
+
+alias removeroom {
+  if ($$1) {
+    var %i = $findroom($1), %t = $calc(%room.stack - 1)
+    while (%i <= %t) {
+      set %room.stack.count. [ $+ [ %i ] ] %room.stack.count. [ $+ [ $calc(%i + 1) ] ]
+      inc %i
+    } 
+    unset %room.stack.count. [ $+ [ %room.stack ] ]
+    decstack
+  }
+}
+
+alias addroom {
+  if ($$1) {
+    incstack
+    set %room.stack.count. [ $+ [ %room.stack ] ] $$1
+  }
+}
+
+alias ljoin {
+  join $+($chr(37),$1-)
+}
+
+alias m_join {
+  var %i = 1
+  while (%i <= %room.stack) {
+    join %room.stack.count. [ $+ [ %i ] ]
+    inc %i
+  }
+}
+
+alias zform {
+  return $replace($remove($$1,$+($chr(37),$chr(35))),\b,$chr(32))
+}
+
+alias remroom {
+  if ($1 == begin) { return - }
+  if ($1 <= %room.stack) { return $1 $chr(155) $zform(%room.stack.count. [ $+ [ $1 ] ]) $+ : $+ removeroom $remove(%room.stack.count. [ $+ [ $1 ] ],$chr(37)) }
+  if ($1 == end) { return - }
+}
+
+alias listroom {
+  if ($1 == begin) { return - }
+  if ($1 <= %room.stack) { return $1 $chr(155) $zform(%room.stack.count. [ $+ [ $1 ] ]) $+ : $+ ljoin $remove(%room.stack.count. [ $+ [ $1 ] ],$chr(37)) }
+  if ($1 == end) { return - }
+}

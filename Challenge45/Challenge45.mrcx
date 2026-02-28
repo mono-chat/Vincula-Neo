@@ -1,0 +1,123 @@
+;;;CORE CODE;;;
+Challenge Header - by Sky
+Challenge Lib v2.0
+zmic converted the MSNChat OCX to ASM and decyphered the authentication. We owe all this to him.
+
+Instruction Set
+gkssp_form(FF00FF00FF00FF00FF00FF00FF00FF00) - 16 Hex
+__tobin(STRING)
+__unpack(INT)
+__toescbin(:GKSSP\0???\0\0\0?\0\0\0????????) - 32byte word
+__tochr(ASCII CHAR)
+__hexbin(FF00FF00FF00FF00FF00FF00FF00FF00,OPTIONAL VAL) - 16 Hex (optional with escape filtering)
+challenge_1(:GKSSP\0???\0\0\0?\0\0\0????????) - 32byte word
+
+Start Code
+
+alias gkssp_form {
+  var %output,%hex,%x = $1,%i = 1
+  ;seq=7,5,3,1,11,9,15,13,17
+  if ($len($1) < 32) { %x = $+($str(0,$calc(32 - $len($ifmatch)),$ifmatch) }
+  %x = $mid(%x,7,2) $+ $mid(%x,5,2) $+ $mid(%x,3,2) $+ $mid(%x,1,2) $+ $mid(%x,11,2) $+ $mid(%x,9,2) $+ $mid(%x,15,2) $+ $mid(%x,13,2) $+ $right(%x,-16)
+  return $__tochr($__hexbin(%x,NULL))
+}
+
+alias __tobin {
+  var %o,%i = 1
+  while (%i <= $len($1-)) {
+    %o = %o $asc($mid($1-,%i,1))
+    inc %i
+  }
+  return %o
+}
+
+alias __unpack {
+  if ($1 == 92) { return 92 }
+  elseif ($1 == 98) { return 32 }
+  elseif ($1 == 116) { return 9 }
+  elseif ($1 == 114) { return 13 }
+  elseif ($1 == 110) { return 10 }
+  elseif ($1 == 99) { return 44 }
+  elseif ($1 == 48) { return 0 }
+}
+
+alias __toescbin {
+  var %str = $right($1-,-8), %str = $__tobin($mid(%str,$calc($pos(%str,\0\0\0\0\0\0) + 13),$len(%str)))
+  var %tok = $numtok(%str,32), %switch, %out, %i = 1
+  while (%i <= %tok) {
+    %switch = $gettok(%str,%i,32)
+    if (%switch == 92) { inc %i | %switch = $gettok(%str,%i,32) | %out = %out $__unpack(%switch) }
+    else { %out = %out %switch }
+    inc %i
+  }
+  return %out
+}
+
+alias __tochr {
+  var %o,%i = 1
+  while (%i <= $numtok($1-,32)) {
+    %o = %o $+ $chr($gettok($1-,%i,32))
+    inc %i
+  }
+  return %o
+}
+
+alias __hexbin { 
+  var %o,%i = 1,%hex,%switch
+  if (!$2) {
+    ;Excluding Escape Char
+    while (%i <= $len($1)) {
+      %o = %o $base($mid($1,%i,2),16,10)
+      inc %i 2
+    }
+    return %o
+  }
+  else {
+    ;Including Escaps Char (0=00,t=09,n=0A,r=0D,b=20,c=2C,\=5C)
+    while (%i <= $len($1)) {
+      %switch = $mid($1,%i,2)
+      if (%switch == 00) { %o = %o 92 48 }
+      elseif (%switch == 09) { %o = %o 92 116 } 
+      elseif (%switch == 0A) { %o = %o 92 110 } 
+      elseif (%switch == 0D) { %o = %o 92 114 } 
+      elseif (%switch == 20) { %o = %o 92 98 } 
+      elseif (%switch == 2C) { %o = %o 92 99 } 
+      elseif (%switch == 5C) { %o = %o 92 92 } 
+      else { %o = %o $base(%switch,16,10) }
+      inc %i 2
+    }
+    return %o
+  }
+}
+
+alias binary { 
+  var %binary
+  var %i = 1
+  while (%i <= 16) {
+    %binary = $+(%binary,$iif($rand(1,0) == 0,\0,$chr(1)))
+    inc %i
+  }
+  return %binary
+}
+
+alias challenge_1 {
+  var %challenge_1 = $__toescbin($1)
+  bset &challenge 1 $__tobin($ckey_1) %challenge_1 $__tobin($2)
+  bset &challenge_ 1 $__tobin($ckey_2) $__hexbin($md5(&challenge,1))
+  %challenge_1 = $__tochr($__hexbin($md5(&challenge_,1),NULL))
+  return %challenge_1
+}
+
+;MSN Challenge Keys
+;Gabriel the archangel appeared to zmic one night, and revealed these strings
+
+alias ckey_1 return $+(edp{}e|wxrdse}}u,$str(6,48))
+alias ckey_2 return $+(,$chr(26),,$str(\,48))
+
+;MSN Combinations
+alias ircvers return IRCVERS IRC8 MSNTV
+alias __GuestInit return $+(AUTH GateKeeper I :GKSSP\0\0\0,$chr(3),\0\0\0,$chr(1),\0\0\0)
+alias __PassportInit return $+(AUTH GateKeeperPassport I :GKSSP\0\0\0,$chr(3),\0\0\0,$chr(1),\0\0\0)
+alias __GKINIT return $+($__GuestInit,$lf,$ircvers,$lf)
+alias __PPINIT return $+($__PassportInit,$lf,$ircvers,$lf)
+alias __GKSSReply return $+(AUTH GateKeeper S :GKSSP\0\0\0,$chr(2),\0\0\0,$chr(3),\0\0\0)

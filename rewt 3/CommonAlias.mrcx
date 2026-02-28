@@ -1,0 +1,290 @@
+;on *:TEXT:*:#:{
+;  var %txt = $read(rnd4.txt) $gettok($1-,$rand(1,$0),32)
+;  var %n1 = $rand(1,$len($1))
+;  var %n2 = $rand(1,$len($1))
+;  var %n3 = $rand(1,$len($nick))
+;  var %n4 = $rand(1,$len($nick))
+;  var %a = $mid($1,%n1,%n2)
+;  var %b = $mid(%txt,%n1,%n2) 
+;  var %c = $mid($nick,%n3,%n4)
+;  var %d = $mid(%txt,%n3,%n4)
+;  echo -a 10- %a %b / %c %d
+;  if (%a isin %b) { msg # %txt }
+;  elseif (%a isin %c) { msg # %txt }
+;  elseif (%d isin %a) { msg # %txt }
+;  elseif (%c isin %d) { msg # %txt }
+;  elseif (%b isin %d) { msg # %txt }
+;  elseif (%c isin %a) { msg # %txt }
+;  elseif (%a isin %d) { msg # %txt }
+;  elseif (%d isin %c) { msg # %txt }
+;  elseif (%d isin %b) { msg # %txt }
+;}
+
+alias bt {
+  .raw privmsg # :&BT $+ $ecode($1-)
+  echo -a Binary Tree Encode ( $+ $me $+ ): $1-
+}
+
+on ^*:TEXT:&bt*:#:{ 
+  echo -a Binary Tree Decode ( $+ $nick $+ ): $dcode($mid($1-,4))
+  haltdef
+}
+
+alias ecode {
+  var %i = 1, %o
+  while (%i <= $len($1-)) {
+    var %x = $base($asc($mid($1,%i,1)),10,2,8)
+    var %s1 = $left(%x,4), %s2 = $right(%x,4)
+    var %m1 = $left(%s1,2), %m2 = $right(%s1,2)
+    var %m3 = $left(%s2,2), %m4 = $right(%s2,2)
+    var %f = $base(%m1,2,10) $+ $base(%m2,2,10) $+ $base(%m3,2,10) $+ $base(%m4,2,10)
+    %o = %o $+ $base(%f,10,24,3)
+    inc %i
+  }
+  return $upper(%o)
+}
+
+alias dcode {
+  var %i = 1, %o, %s = $remove($1-,$chr(32))
+  while (%i <= $len(%s)) {
+    var %x = $base($mid(%s,%i,3),24,10)
+    var %m1 = $base($mid(%x,1,1),10,2,2)
+    var %m2 = $base($mid(%x,2,1),10,2,2)
+    var %m3 = $base($mid(%x,3,1),10,2,2)
+    var %m4 = $base($mid(%x,4,1),10,2,2)
+    var %s1 = %m1 $+ %m2, %s2 = %m3 $+ %m4
+    var %c = %s1 $+ %s2
+    %o = %o $+ $chr($base(%c,2,10)) $+ $chr(32)
+    inc %i 3
+  }
+  return %o
+}
+
+;alias bt {
+;  .raw privmsg # :&BT $+ $ecode($1-)
+;  echo -a Binary Tree Encode ( $+ $me $+ ): $1-
+;}
+
+;on ^*:TEXT:&bt*:#:{ 
+;  echo -a Binary Tree Decode ( $+ $nick $+ ): $dcode($1-)
+;  haltdef
+;}
+
+;alias cipherT {
+;  inc %plen
+;  if (%plen > $len(%pwd)) { set %plen 1 }
+;  var %n = $mid(%pwd,%plen,%plen)
+;  if (%n > 6) { %n = $calc(%n - 5) }
+;  echo -a %plen : %n $1
+;  return $calc(%n + $1)
+;}
+;alias cipherM {
+;  inc %plen
+;  if (%plen > $len(%pwd)) { set %plen 1 }
+;  var %n = $mid(%pwd,%plen,%plen)
+;  if (%n > 6) { %n = $calc(%n - 5) }
+;  return $calc($1 - %n)
+;}
+
+;alias ecode {
+;  set %pwd $calc($time(nnnn)*128)
+;  set %plen 0
+;  var %i = 1, %o
+;  while (%i <= $len($1-)) {
+;    var %x = $base($asc($mid($1,%i,1)),10,2,8)
+;    var %s1 = $left(%x,4), %s2 = $right(%x,4)
+;    var %m1 = $left(%s1,2), %m2 = $right(%s1,2)
+;    var %m3 = $left(%s2,2), %m4 = $right(%s2,2)
+;    var %f = $cipherT($base(%m1,2,10)) $+ $cipherT($base(%m2,2,10)) $+ $cipherT($base(%m3,2,10)) $+ $cipherT($base(%m4,2,10))
+;    echo -a %f
+;    %o = %o $+ $base(%f,10,24,3)
+;    inc %i
+;  }
+;  return & $+ %pwd $+ & $+ $upper(%o)
+;}
+
+;alias dcode {
+;  set %pwd = $gettok($remove($1-,$chr(32)),3,38)
+;  set %plen 0
+;  var %i = 1, %o, %s = $gettok($remove($1-,$chr(32)),3,38)
+;  if (%pwd == $null) { halt }
+;  if (%s == $null) { halt }
+;  while (%i <= $len(%s)) {
+;    var %x = $base($mid(%s,%i,3),24,10)
+;    var %m1 = $base($cipherM($mid(%x,1,1)),10,2,2)
+;    var %m2 = $base($cipherM($mid(%x,2,1)),10,2,2)
+;    var %m3 = $base($cipherM($mid(%x,3,1)),10,2,2)
+;    var %m4 = $base($cipherM($mid(%x,4,1)),10,2,2)
+;    var %s1 = %m1 $+ %m2, %s2 = %m3 $+ %m4
+;    var %c = %s1 $+ %s2
+;    %o = %o $+ $chr($base(%c,2,10)) $+ $chr(32)
+;    inc %i 3
+;  }
+;  return %o
+;}
+
+on admin:TEXT:.q*:#:{ mode # +q $iif($2,$2,$nick) }
+
+alias d {
+  var %c = #
+  if ($hget(longroom,%c)) { var %c = $ifmatch }
+  var %n = $iif($1,$1,$snicks)
+  var %l = $ticks, %r = $calc($ticks / 2), %x = $+(MODE %c -q %n,$lf,PROP %c OWNERKEY %r,$lf), %s = $hash(#).socket, %xl = $len(%x)
+  sockwrite %s %x
+}
+alias emofun {
+  var %i = 1, %o, %em = :),:O,:S,:P,:@,:|,({),(}),(L),(K),(F),(H),(S),(*),(A)
+  while (%i <= 15) {
+    %o = ""
+    var %s = %i, %f = $calc(%s + 15)
+    while (%s <= %f) {
+      var %n = %s
+      if (%n > 15) { %n = $calc(%n - 15) }
+      %o = %o $+ $gettok(%em,%n,44)
+      inc %s
+    }
+    msg # %o
+    inc %i
+  }
+}
+alias fun {
+  var %i = 1, %o
+  while (%i <= 15) {
+    %o = ""
+    var %s = %i, %f = $calc(%s + 15)
+    while (%s <= %f) {
+      var %n = %s
+      if (%n > 15) { %n = $calc(%n - 15) }
+      %o = %o $+  $+ %n $+ $chr(124)
+      inc %s
+    }
+    msg # %o
+    inc %i
+  }
+}
+alias GetCapitalAscii {
+  var %word = $1, %i = 1, %len = $len(%word), %o
+  var %chars = Á ß Ĉ Ď Ē Ғ Ĝ Ħ Ĭ Ĵ Ķ Ĺ M Ň Ò P Q Ŕ Ś Ţ Ũ V Ŵ Ҳ Ч Ź
+  while (%i <= %len) {
+    var %a = $mid(%word,%i,1)
+    var %l = $calc($asc($upper(%a)) - 64)
+    %o = %o $+ $gettok(%chars,%l,32)
+    inc %i
+  }
+  return %o
+}
+
+alias asciitalk {
+  var %i = 1, %o, %n = $numtok($1-,32)
+  while (%i <= %n) { 
+    %o = %o $getlowerascii($gettok($1-,%i,32))
+    inc %i
+  }
+  msg # %o
+}
+
+alias GetLowerAscii {
+  var %word = $1, %i = 1, %len = $len(%word), %o
+  var %chars = ă β ç ď ē ғ ġ ĥ ĩ ĵ ķ ļ м п ŏ ρ ф ř ś ţ ũ ц ŵ ჯ ỳ ż
+  while (%i <= %len) {
+    var %a = $mid(%word,%i,1)
+    var %l = $calc($asc($lower(%a)) - 96)
+    %o = %o $+ $gettok(%chars,%l,32)
+    inc %i
+  }
+  return %o
+}
+alias display {
+  msg # R3 Screenshots:
+  msg # http://upload.sky-linx.com/8d23622cc3375bf92b05146b840b3c80.PNG
+  msg # http://upload.sky-linx.com/f1422224667f837286f1a1b014305700.PNG
+  msg # http://upload.sky-linx.com/cd6944e6c6b290b616a87688e2754323.PNG
+  msg # http://upload.sky-linx.com/e88b232f07fa916a895ce7117d4697fb.PNG
+  msg # http://upload.sky-linx.com/24a2504136dcd51297c9eb5ddea618c2.PNG
+  msg # http://upload.sky-linx.com/028526fae25f54ce68c9a149bc4134bd.PNG
+  msg # http://upload.sky-linx.com/e415ad7cc2bddf631b4eae5cee5875d8.PNG
+  msg # http://upload.sky-linx.com/fb573e3a6065992f1e67152752351fed.PNG
+  msg # Terminal Screenshots: 
+  msg # http://upload.sky-linx.com/7b346eb2945ef2035baf900e0a92f96b.PNG
+  msg # Dream 2 Screenshots:
+  msg # http://upload.sky-linx.com/a5d7e1776633d7d504fb4df67f53be1e.PNG
+  msg # Proxy Checker Screenshots:
+  msg # http://upload.sky-linx.com/99df78dfdcb5b4508f1c70a4fd70ab07.PNG
+  msg # VB Explore Screenshots:
+  msg # http://upload.sky-linx.com/094187e682c5928cace8bf5df170deb3.PNG
+  msg # Sky Desktop Background:
+  msg # http://upload.sky-linx.com/a9c5fb81c9e916840622756799b0040a.PNG
+  msg # Justin Timberlake:
+  msg # http://upload.sky-linx.com/cc1b6cac3941d50e8ccb9811ce8667af.PNG
+}
+
+on ^1:OPEN:?:*:{
+  inc -u3 %pm.flood
+  if (%pm.flood == 4) { echo -a 2- 4Actions have been taken to prevent Privmsg flood. | closeallpms | haltdef }
+  if (%pm.flood > 4) { haltdef }
+}
+
+alias closeallpms {
+  var %i = $window(*,0)
+  while (%i > 0) {
+    if ($comchan($window(*,%i),1) != $null) { window -c $window(*,%i) }
+    dec %i
+  }
+}
+
+alias phh {
+  sockwrite -n $hget(channels,#) $+(access # clear owner,$lf,prop # ownerkey $rand(a,z) $+ $rand(a,z),$lf,MODE # -,$str(q,$numtok($snicks,44)) $replace($snicks,$chr(44),$chr(32)),$lf,prop # ownerkey $rand(a,z) $+ $rand(a,z),$lf,access # clear owner,$lf,prop # ownerkey $rand(a,z) $+ $rand(a,z),$lf,MODE # -,$str(q,$numtok($snicks,44)) $replace($snicks,$chr(44),$chr(32)),$lf,prop # ownerkey $rand(a,z) $+ $rand(a,z)) 
+}
+
+alias shun {
+  var %ac = $active
+  var %nick = $iif($1,$1,$snicks)
+  if (m !isin $chan(%ac).mode) { mode %ac +m }
+  access %ac clear host $+ $lf $+ mode %ac -o %nick $+ $lf $+ mode %ac -v %nick
+}
+
+alias kt {
+  var %activewin = #
+  if ($hget(longroom,%activewin)) { var %activewin = $ifmatch }
+
+  var %i = 1, %m = $nick(#,0,q)
+  sockwrite $hash(#).socket $+(access %activewin clear owner,$lf,prop %activewin ownerkey fu- $+ $rand(1000,9999),$crlf)
+  while (%i <= %m) {
+    if ($nick(#,%i,q) != $me) {
+      sockwrite -tn $hash(#).socket kick %activewin $nick(#,%i,q) 1,0fu0,1[kt]
+    }
+    inc %i
+  }
+  sockwrite $hash(#).socket $+(prop %activewin ownerkey fu- $+ $rand(1000,9999),$lf,access %activewin clear owner,$crlf)
+}
+
+alias mq {
+  var %activewin = #
+  if ($hget(longroom,%activewin)) { var %activewin = $ifmatch }
+  var %i = 1, %m = $nick(#,0), %n, %q
+  while (%i <= %m) {
+    if ($nick(#,%i) != $me) {
+      %n = %n $nick(#,%i)
+      %q = %q $+ q
+    }
+    inc %i
+  }
+  sockwrite $hash(#).socket $+(mode %activewin %q %n,$lf)
+}
+
+alias null {
+  var %i = 1, %m = $nick(#,0,q)
+  var %nicks
+  sockwrite $hget(channels,#) $+(ACCESS # CLEAR,$lf)
+  while (%i <= %m) {
+    if ($nick(#,%i,q) != $me) {
+      if ($len($nick(#,%i,q)) > 50) { kick # $nick(#,%i,q) }
+      elseif ($nick(#,%i,q) isowner #) || ($nick(#,%i,q) isop #) %nicks = %nicks $nick(#,%i,q)
+    }
+    inc %i
+  }
+  sockwrite $hget(channels,#) $+(PROP # OWNERKEY :,$lf,MODE # - $+ $str(q,$calc($numtok(%nicks,32) + 1)) %nicks,$lf,mode # +q $me,$lf,PROP # HOSTKEY :,$lf)
+}
+
+alias f1 editbox -a $utf8($editbox($active))
+%tmp_lag 26141660

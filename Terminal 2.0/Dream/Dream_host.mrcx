@@ -1,0 +1,94 @@
+;;;;;;knock thing;;;;;
+
+on *:input:#:{
+  if ($1 == .dream) {
+    set %botnick $iif($2,$2,$me $+ [Dream])
+    /dde BotServ command "" /establish $sock($hget(channels,#)).ip $sock($hget(channels,#)).port $remove(#,$chr(37)) $me %botnick
+  }
+  elseif ($1 == /dream) {
+    set %botnick $iif($2,$2,$me $+ [Dream])
+    /dde BotServ command "" /establish $sock($hget(channels,#)).ip $sock($hget(channels,#)).port $remove(#,$chr(37)) $me %botnick
+  }
+  elseif ($1 == .closeall) {
+    /dde BotServ command "" /closeall
+  }
+  elseif ($1 == .bothop) {
+    /dde BotServ command "" /bothop $remove(#,$chr(37))
+  }
+  elseif ($1 == .botdeop) {
+    /dde BotServ command "" /botdeop $remove(#,$chr(37)) $snicks
+  }
+  elseif ($1 == .recon) {
+    /dde BotServ command "" /recon $remove(#,$chr(37))
+  }
+  elseif ($1 == .quit) {
+    /dde BotServ command "" /closesck $remove(#,$chr(37)) $2-
+  }
+  elseif ($1 == .list) {
+    /dde BotServ command "" /listroom $remove(#,$chr(37))
+  }
+  elseif ($1 == .botjoin) {
+    /dde BotServ command "" /botjoin $remove(#,$chr(37))
+  }
+  elseif ($1 == .botjoinall) {
+    var %i = 1
+    while (%i <= $chan(0)) {
+      /dde BotServ command "" /establish $sock($hget(channels,$chan(%i))).ip $sock($hget(channels,$chan(%i))).port $remove($chan(%i),$chr(37)) $me %botnick
+      inc %i
+    }
+  }
+  elseif ($1 == .update) {
+    /dde BotServ command "" /update
+  }
+  elseif ($1 == .nick) {
+    /dde BotServ command "" /nick $2
+  }
+  elseif ($1 == .botsay) {
+    /dde BotServ command "" /botsay $remove(#,$chr(37)) $2-
+    halt
+  }
+  elseif ($1 == .invite) {
+    /dde BotServ command "" /doinvite $remove(#,$chr(37))
+  }
+}
+
+menu status {
+  Dream
+  .Run:{ run $mircdirdream/mirc.exe }
+}
+
+alias botsay {
+  /dde BotServ command "" /botsay $remove(#,$chr(37)) $1-
+  halt
+}
+
+alias botaction {
+  /dde BotServ command "" /botsay $remove(#,$chr(37)) ACTION $1- $+ 
+  halt
+}
+
+alias botkick {
+  /dde BotServ command "" /botkick $remove(#,$chr(37)) $snicks $1-
+  halt
+}
+
+alias botmode {
+  /dde BotServ command "" /botmode $remove($1,$chr(37)) $2-
+}
+
+on *:JOIN:#:{
+  if ($nick == %botnick) && ($me isowner #) && ($ial($nick).addr == %botgate) {
+    mode # +q %botnick
+  }
+}
+
+on *:start:{
+  ;ddeserver on Terminal
+}
+
+raw knock:*:{
+  if ($nick == %botnick) {
+    access $1 add owner %botgate
+    /dde BotServ command "" /botjoin $remove($1,$chr(37))
+  }
+}

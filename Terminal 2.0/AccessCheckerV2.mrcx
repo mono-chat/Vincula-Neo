@@ -1,0 +1,100 @@
+on *:TEXT:*:#:{
+  ;msg # $nick
+  ;msg # IM A CLOWN!
+}
+
+;Access Checker V2 - Sky
+
+;Design:
+
+;Group A
+;Group B
+
+;Menu
+
+on *:START:{ unset %*.count }
+
+
+menu channel {
+  Access Checker
+  .Start:{ __axinitcheck # | echo # 9› $str( ,5) 10Access filtering for # enabled. }
+  .Stop:{ __axstopcheck # | echo # 4› $str( ,5) 10Access filtering for # disabled.  }
+}
+
+
+alias rc {
+  return $remove($1,$chr(35),$chr(37))
+}
+
+alias __axstopcheck {
+  var %x = $remove($$1,$chr(37) $+ $chr(35))
+  if ($hget($+(axchka,%x)).size > 0) { hfree $+(axchka,%x) }
+  if ($hget($+(axchkb,%x)).size > 0) { hfree $+(axchkb,%x) }
+  $+(.timer,ax.,%x) off
+  unset % [ $+ [ %x ] ] [ $+ [ .count ] ]
+}
+
+alias __axinitcheck {
+  var %x = $remove($$1,$chr(37) $+ $chr(35))
+  if ($hget($+(axchka,%x)).size > 0) { hfree $+(axchka,%x) }
+  if ($hget($+(axchkb,%x)).size > 0) { hfree $+(axchkb,%x) }
+  hmake $+(axchka,%x) 150
+  hmake $+(axchkb,%x) 150
+  set % [ $+ [ %x ] ] [ $+ [ .count ] ] 0
+  $+(.timer,ax.,%x) 0 5 __axcheck %x
+}
+
+alias __axcheck {
+  ;Roomname = $1
+  var %chan = $+($chr(37),$chr(35),$1),%socket = $hget(channels,%chan),%a = $+(axchka,$1),%b = $+(axchkb,$1)
+  var %i = 1,%t = $calc(% [ $+ [ $1 ] ] [ $+ [ .count ] ] - 1) 
+  while (%i <= %t) {
+    if ($hget(%a,%i) != $null) {
+      var %found = 0, %s = 1, %new = 1
+      while (%s <= 150) {
+        if ($hget(%a,%i) == $hget(%b,%s)) && ($hget(%b,%s) != $null) { %new = 0 }
+        if ($hget(%a,%i) == $hget(%b,%s)) && ($hget(%b,%s) != $null) { %found = 1 }
+        inc %s
+      } 
+    }
+    if (%new == 1) && (%found == 0) && ($hget($+(axchkb,$1),1) != $null) { echo -a 4› 4Access has been added for %chan 4( 12 $hget(%a,%i) 4) }
+    if (%new == 1) && (%found == 0) && ($hget($+(axchkb,$1),1) == $null) { echo -a 12‹ 10Importing Access for %chan 4( 12 $hget(%a,%i) 4) }
+    inc %i
+  }
+  %i = 1
+  while (%i <= 150) {
+    hadd %b %i $hget(%a,%i)
+    inc %i
+  }
+  if ($me isowner %chan) || ($me isop %chan) && ($sock(%socket).status == active) { sockwrite %socket $+(ACCESS %chan,$lf) }
+}
+
+alias access {
+  set %manualcheck. [ $+ [ $1 ] ] true
+  .raw access $1-
+}
+
+raw 803:*:{
+  var %x = $remove($2,$chr(37) $+ $chr(35))
+  if (%manualcheck. [ $+ [ $2 ] ] == true) { echo -s 7Start of access entrys for $2 }
+  if ($hget($+(axchka,%x)).size) { set % [ $+ [ %x ] ] [ $+ [ .count ] ] 1 | halt }
+  halt
+}
+
+raw 804:*:{
+  var %x = $remove($2,$chr(37) $+ $chr(35))
+  if (%manualcheck. [ $+ [ $2 ] ] == true) { echo -s  12 $3-7 4 $+ $8- 10 $+ $get_names($6) }
+  if (% [ $+ [ %x ] ] [ $+ [ .count ] ]) {
+    hadd $+(axchka,%x) % [ $+ [ %x ] ] [ $+ [ .count ] ] $3-
+    inc % [ $+ [ %x ] ] [ $+ [ .count ] ]
+    halt
+  }
+  halt
+}
+
+raw 805:*:{
+  var %x = $remove($2,$chr(37) $+ $chr(35))
+  if (%manualcheck. [ $+ [ $2 ] ] == true) { echo -s 7End of access entrys for $2 | unset %manualcheck. [ $+ [ $2 ] ] }
+  if ($hget($+(axchka,%x)).size) { halt }
+  halt
+}
