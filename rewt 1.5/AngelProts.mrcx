@@ -1,0 +1,111 @@
+;;;;;Old prots from Athalon;;;;;;
+
+;;;;;;;;Flood Prot invite 60 delay Prot;;;;;;;;;;;
+#FloodJOIN off
+on *:JOIN:#:{
+  inc -u3 %Flood. [ $+ [ # ] ]
+  set -u3 %flood. [ $+ [ # ] ] [ $+ [ . ] ] [ $+ [ %Flood. [ $+ [ # ] ] ] ] $nick
+  if (%flood. [ $+ [ # ] ] > 3) {
+    if ($me isop #) || ($me isowner #) {
+      if (> !isin $nick) {
+        if (%flood. [ $+ [ # ] ] [ $+ [ .1 ] ]) || (%flood. [ $+ [ # ] ] [ $+ [ .2 ] ]) || (%flood. [ $+ [ # ] ] [ $+ [ .3 ] ]) {
+          access # add deny access # add deny $ial(%flood. [ $+ [ # ] ] [ $+ [ .1 ] ]).addr | kick # %flood. [ $+ [ # ] ] [ $+ [ .1 ] ] Passport Flood. | unset %flood. [ $+ [ # ] ] [ $+ [ .1 ] ]
+          access # add deny access # add deny $ial(%flood. [ $+ [ # ] ] [ $+ [ .1 ] ]).addr | kick # %flood. [ $+ [ # ] ] [ $+ [ .2 ] ] Passport Flood. | unset %flood. [ $+ [ # ] ] [ $+ [ .2 ] ]
+          access # add deny access # add deny $ial(%flood. [ $+ [ # ] ] [ $+ [ .1 ] ]).addr | kick # %flood. [ $+ [ # ] ] [ $+ [ .3 ] ] Passport Flood. | unset %flood. [ $+ [ # ] ] [ $+ [ .3 ] ]
+        }
+        ;sockwrite -tn $hget(channels,#) mode # +i
+        sockwrite $hget(channels,#) $+(access # add deny $ial($nick).addr,$lf,kick # $nick :Passport Flood.,$crlf)
+        set %floodprot. [ $+ [ # ] ] TRUE
+        .timerflooda $+ $chan 1 60 chkfloodprot
+        .timerfloodb $+ $chan 1 60 unset %flood. [ $+ [ # ] ]
+      } 
+      elseif (> isin $nick) && ($nick ison #) {
+        if (%flood. [ $+ [ # ] ] [ $+ [ .1 ] ]) || (%flood. [ $+ [ # ] ] [ $+ [ .2 ] ]) || (%flood. [ $+ [ # ] ] [ $+ [ .3 ] ]) {
+          access # add deny >*
+          kick # %flood. [ $+ [ # ] ] [ $+ [ .1 ] ] Guest Flood. | unset %flood. [ $+ [ # ] ] [ $+ [ .1 ] ]
+          kick # %flood. [ $+ [ # ] ] [ $+ [ .2 ] ] Guest Flood. | unset %flood. [ $+ [ # ] ] [ $+ [ .2 ] ]
+          kick # %flood. [ $+ [ # ] ] [ $+ [ .3 ] ] Guest Flood. | unset %flood. [ $+ [ # ] ] [ $+ [ .3 ] ]
+        }
+        sockwrite $hget(channels,#) $+(access # add deny >*,$lf,kick # $nick :Guest Flood.,$crlf)
+      }
+    }
+  }
+}
+alias chkfloodprot {
+  var %i = 1
+  var %k = $chan(0)
+  while (%i <= %k) {
+    if (%floodprot. [ $+ [ $chan(%i) ] ] == TRUE) {
+      sockwrite -tn $hget(channels,$chan(%i)) mode $chan(%i) -i
+      unset %floodprot. [ $+ [ $chan(%i) ] ]
+    }
+    inc %i
+  }
+}
+#FloodJOIN end
+;;;;;;;;;Mass Kick Prot;;;;;;;;;;;
+#MassKick off
+on *:KICK:#:{
+  if (> !isin $knick) {
+    inc -u2 %KICKFlood. [ $+ [ $nick ] ] [ $+ [ . ] ] [ $+ [ # ] ]
+    if (%KICKFlood. [ $+ [ $nick ] ] [ $+ [ . ] ] [ $+ [ # ] ] > 3) { 
+      sockwrite -tn $hget(channels,#) kick # $nick :Mass kicking is not permitted in this chatroom.
+      sockwrite -tn $hget(channels,#) prop # OWNERKEY $rndpass  
+      sockwrite -tn $hget(channels,#) access # clear
+      sockwrite -tn $hget(channels,#) access # add owner $ial($me).addr 0 : $+ 14A15ngel Prot 1- 10By 2S12ky
+    }
+  }
+}
+#MassKick end
+;;;;;;;;;Extended Scroll Kick;;;;;
+#extScrollKick off
+on *:TEXT:*:#:{
+  if ($nick !isowner #) && ($nick !isop #) {
+    if (%extTEXTFloodTXT. [ $+ [ $nick ] ] [ $+ [ . ] ] [ $+ [ # ] ] == $1-) {
+      inc -u7 %extTEXTFlood. [ $+ [ $nick ] ] [ $+ [ . ] ] [ $+ [ # ] ]
+    }
+    else { set -u15 %extTEXTFloodTXT. [ $+ [ $nick ] ] [ $+ [ . ] ] [ $+ [ # ] ] $1- }
+    if (%extTEXTFlood. [ $+ [ $nick ] ] [ $+ [ . ] ] [ $+ [ # ] ] > 1) { 
+      sockwrite -tn $hget(channels,#) kick # $nick :Please do not Scroll in this chatroom.
+    }
+  }
+}
+#extScrollKick end
+menu status,menubar {
+  Rewt
+  .AngelSystem
+  ..JoinFloodProt $iif($group(#FloodJOIN) == On,On,Off)
+  ...JoinFloodProt $iif($group(#FloodJOIN) == On,Off,On) $+ :{
+    if ($group(#FloodJOIN) == On) {
+      .disable #FloodJOIN
+      amsg Join Flood Protection Disabled - By Sky
+    }
+    elseif ($group(#FloodJOIN) == Off) {
+      .enable #FloodJOIN
+      amsg Join Flood Protection Enabled - By Sky
+    }
+  }
+  ..ScrollKickProt $iif($group(#extScrollKick) == On,On,Off) 
+  ...ScrollKickProt $iif($group(#extScrollKick) == On,Off,On) $+ :{
+    if ($group(#extScrollKick) == On) {
+      .disable #extScrollKick
+      amsg Scroll Kick Protection Disabled - By Sky
+    }
+    elseif ($group(#extScrollKick) == Off) {
+      .enable #extScrollKick
+      amsg Scroll Kick Protection Enabled - By Sky
+    }
+  }
+  ..MassKickProt $iif($group(#MassKick) == On,On,Off) 
+  ...MassKickProt $iif($group(#MassKick) == On,Off,On) $+ :{
+    if ($group(#MassKick) == On) {
+      .disable #MassKick
+      amsg Mass Kick Protection Disabled - By Sky
+    }
+    elseif ($group(#MassKick) == Off) {
+      .enable #MassKick
+      amsg Mass Kick Protection Enabled - By Sky
+    }
+  }
+
+}

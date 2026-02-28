@@ -1,0 +1,514 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;Rewt MSN Connection Script;;;;;
+;;;;;                          ;;;;;
+;;;;;Design Specification      ;;;;;
+;;;;;                          ;;;;;
+;;;;;1) Non-Force Connection   ;;;;;
+;;;;;2) NEW IRCVERS(MSNTV)     ;;;;;
+;;;;;3) SocketMethod(TCP)      ;;;;;
+;;;;;                          ;;;;;
+;;;;;                          ;;;;;
+;;;;; Sky Networks Corp        ;;;;;
+;;;;;                          ;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;Remote Identifyers
+
+alias lookupsIP return 207.68.167.253
+alias TKIdent {
+  echo -s $left($gettok($1,4,46),3)
+  var %TKIdent = TK2CHATCHATA0 $+ $calc($left($gettok($1,4,46),3)-156)
+  return %TKIdent
+}
+
+;Local Identifyers
+
+alias TruncatedRoom {
+  var %room
+  if ($len($$1) > 60) {
+    %room = $mid($$1,1,60)
+  }
+  elseif ($len($$1) <= 60) { %room = $$1 }
+  return %room
+}
+
+alias RealRoom {
+  return $hget(LongRoom,$$1)
+}
+
+alias rewtkey {
+  return rewt $+ $rand(1000,9999) $+ // $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130))
+}
+
+alias FreePort { 
+  var %port
+  :RePort
+  %port = $rand(1000,9999)
+  if (!$portfree(%port)) { goto report }
+  return %port
+}
+
+alias getrndsckhash {
+  var %sckhash = $rand(a,z) $+ $rand(a,z) $+ $rand(a,z) $+ $rand(a,z) $+ $rand(a,z)
+  return %sckhash
+}
+
+
+alias -l guestform {
+  return $mid($1,7,2) $+ $mid($1,5,2) $+ $mid($1,3,2) $+ $left($1,2) $+ $mid($1,11,2) $+ $mid($1,9,2) $+ $mid($1,15,2) $+ $mid($1,13,2) $+ $right($1,16)
+}
+alias passform return $base($len($$1),10,16,8) $+ $1 $+ $base($len($$2),10,16,8) $+ $2
+
+
+;Local Alias's
+
+alias scklist {
+  var %i = 1
+  while (%i <= $sock(*,0)) {
+    echo $active 2[14 $+ $sock(*,%i) $+ 2]1: 10 $+ $sock(*,%i).mark
+    inc %i
+  }
+
+}
+
+alias ShowDebug {
+  if (%debug == SET) && ($window(@debug) == @debug) {
+    echo @debug $1-
+  }
+}
+
+alias CreateExploithWND {
+  window -hpk0 @exploit- $+ $$3
+  showdebug $dll(nHTMLn.dll,attach,$window(@exploit- $+ $$3).hwnd)
+  showdebug $dll(nHTMLn.dll,select,$window(@exploit- $+ $$3).hwnd)
+  showdebug $dll(nHTMLn.dll,navigate,about:<OBJECT ID="ChatFrame" CLASSID="CLSID:ECCDBA05-B58F-4509-AE26-CF47B2FFC3FE"><PARAM NAME="Server" VALUE=" $+ $remove($$1,:) $+ : $+ $$2 $+ "><PARAM NAME="NickName" VALUE=" $rand(a,z) $+ "><PARAM NAME="RoomName" VALUE="Rewt"></object>)
+  return $$1 $$2 $$3
+}
+
+alias -l Link {
+  hadd -m Link $$1 $$2
+  hadd -m Link $$2 $$1
+}
+
+alias -l relink {
+  hdel link $hget(link,$hget(link,$$1)) $$2
+  hadd -m Link $$1 $$2
+  hadd -m Link $$2 $$1
+}
+
+;Remote Alias's
+
+alias KeepFinds {
+  if ($sock($$1).status == active) { sockwrite -tn $$1 VERSION }
+  elseif ($sock($$1).status == sckConnecting) { halt }
+  elseif (!$sock($$1)) { redosck $$1 $hget(sck,$$1) }
+  else halt
+}
+
+alias redosck {
+  if ($hget(link,$hget(link,$$1))) { if ($sock($hget(link,$hget(link,$$1)))) { sockclose $sock($hget(link,$hget(link,$$1))) } | hdel link $hget(link,$hget(link,$$1)) }
+  if ($hget(ips,$$1)) {
+    echo -s Attempting to reopen socket $$1
+    if ($hget(link,$$1)) { if ($sock($hget(link,$$1))) { sockclose $sock($hget(link,$$1)) } | hdel link $hget(link,$$1) }
+    if ($$1 == IMSNLK) { if (!$sock(startOCX)) { socklisten startOCX $FreePort } else { 
+        sockclose startocx
+        socklisten startOCX $FreePort
+        Link $$1 OCX
+      }
+    }
+    else {
+      if ($sock(lchan. $+ $right($$1,5))) { sockclose lchan. $+ $right($$1,5) }
+      if (!$sock(fchan. $+ $right($$1,5))) { 
+        socklisten fchan. $+ $right($$1,5) $freeport
+      }
+      else {
+        sockclose fchan. $+ $right($$1,5)
+        socklisten fchan. $+ $right($$1,5) $freeport
+      }
+    }
+    if ($window(exploit- $+ $$1)) { window -c exploit- $+ $$1 }
+    if ($window(exploit- $+ $right($sockname,5))) { window -c exploit- $+ $right($sockname,5) }
+    sockopen $$1 $hget(ips,$$1) 6667
+    hadd link $$1 lchan. $+ $right($$1,5)
+    if ($$2) { sockmark $$1 $$2 }
+  }
+  else { echo -s Attemption to reopen socket $$1 has failed. }
+}
+
+;System
+
+on *:LOAD:{ set %msnprofile 1 | set %runonce true }
+on *:START:{ 
+  if (%runonce == true) { ud }
+  elseif (!%runonce) {
+    if (!%usrnamepass) && ($mid($me,1,1) != >) { ud }
+    elseif (%usrnamepass) {
+      ILHC
+      .timerupdate 0 18000 updateme
+    }
+  }
+}
+on *:DISCONNECT:{ ILHC }
+
+;Initiate Local Host Connection
+
+alias -l ILHC {
+  socklisten premIRC $FreePort
+  server 127.0.0.1 $sock(premIRC).port
+}
+
+;Accept Local Connection
+
+on *:socklisten:premIRC:{
+  sockaccept sckmIRC
+  sockclose premIRC
+  sockwrite -tn sckmIRC :rewt 001 $me :Welcome to the rewt Connection.
+  sockwrite -tn sckmIRC :rewt 002 $me :Connection Type: Non-Force
+  sockwrite -tn sckmIRC :rewt 003 $me :rewt Version 1.0
+  sockwrite -tn sckmIRC :rewt 004 $me :rewt aioxz abcdefhiklmnoprstuvxyz
+  sockwrite -tn sckmIRC :rewt 800 $me 1 0 GateKeeper,NTLM 512
+  sockwrite -tn sckmIRC :rewt NOTICE $me :By Nero
+  sockmark sckmIRC Local Connection
+  if (!%ticket) || (!%profile) { sockwrite -tn sckmIRC : $+ $me NICK > $+ $remove($me,>) }
+  if (!$sock(IMSNLK)) { IMSNLK }
+}
+
+on *:sockread:sckmIRC:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if ($$1 == USER) { sockwrite -tn $sockname :GKSSP 001 $me : | ircx | halt }
+  elseif ($1 == INVITE) { sockwrite -tn $hget(channels,$realroom($2)) $1 $3 }
+  elseif ($1 == NICK) {
+    if (!$sock(chan.*)) { sockwrite -tn $sockname : $+ $me NICK $2- | halt  } 
+    elseif (> isin $me) && ($sock(chan.*)) { sockwrite -tn chan.* $1- | halt  }
+  }
+  elseif ($1 == FINDU) { sockwrite -tn IMSNLK $1- }
+  elseif ($1 == JOIN) { 
+    if (!$hget(LongRoom,$$2)) {
+      hadd -m LongRoom $TruncatedRoom($$2) $$2
+    }
+    if ($hget(channels,$realroom($2))) && ($sock($hget(channels,$realroom($2)))) { sockwrite -tn $hget(channels,$realroom($2)) $1- | halt  }
+    else {
+      set %JOIN $2 | sockwrite -tn IMSNLK FINDS %join | halt 
+    }
+  }
+  elseif ($me ison $2) {
+    if (!$hget(channels,$2)) { sockwrite -tn $findjoinedsocket($2) $1- }
+    elseif ($hget(channels,$2) != $null) {
+      sockwrite -tn $hget(channels,$2) $1-
+      halt
+    }
+  }
+  elseif ($mid($2,1,2) == $chr(37) $+ $chr(35)) {
+    if (!$hget(channels,$2)) { sockwrite -tn $findjoinedsocket($2) $1- }
+    elseif ($hget(channels,$2) != $null) {
+      sockwrite -tn $hget(channels,$2) $1-
+      halt
+    }
+  }
+  elseif ($comchan($2,1)) { sockwrite -tn $hget(channels,$comchan($2,1)) $1- | halt  }
+  else { 
+    if ($sock(IMSNLK).status == active) { sockwrite -tn IMSNLK $1- }
+    else { halt }
+  }
+}
+
+alias findjoinedsocket {
+  var %socket
+  var %i = 1
+  while (%i <= $sock(*,0)) {
+    if ($sock(*,%i).mark == $$1) { %socket = $sock(*,%i) | %i = $sock(*,0) }
+    inc %i
+  }
+  return %socket
+}
+
+alias -l IMSNLK {
+  socklisten startOCX $FreePort
+  sockopen IMSNLK $lookupsip 6667
+  hadd -m ips IMSNLK $sock(IMSNLK).ip
+  Link IMSNLK OCX
+}
+
+on *:sockopen:IMSNLK:{
+  if (> !isin $me) { sockwrite -tn $sockname NICK $me }
+  showdebug Got Exploit $CreateExploithWND($sock($sockname).ip,$sock(startOCX).port,$sockname)
+  .timerkeepfinds $+ $sockname 0 15 KeepFinds $sockname
+}
+
+on *:socklisten:startOCX:{
+  sockaccept OCX
+  sockclose $sockname
+}
+
+on *:sockread:OCX:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  showdebug $sockname : $1-
+  if ($1 == IRCVERS) { sockwrite -tn $hget(link,$sockname) IRCVERS IRC5 MSNTV!8.00.0211.1802 }
+  if ($$1 == AUTH) && ($3 == I) {
+    if ($left($me,1) == >) { sockwrite -tn $hget(link,$sockname) $1- }
+    else { sockwrite -tn $hget(link,$sockname) $1-2 $+ Passport $3- }
+  }
+  if (Auth Gatekeeper S isin $1-) {
+    sockwrite -tn $hget(link,$sockname) $1-
+  }
+  elseif ($$1 == NICK) { sockclose $sockname | window -c @exploit- $+ $hget(link,$sockname) }
+}
+
+on *:sockread:IMSNLK:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if ($$2 == 351) { halt }
+  showdebug $sockname : $1-
+  if ($1-4 == AUTH Gatekeeper S :OK) {
+    sockwrite -tn $sockname AUTH GatekeeperPassport S : $+ $passform(%ticket,%profile)
+    ;sockwrite -tn $sockname USER $me "rewt" "rewt.co.uk" :4rewt
+    sockwrite -tn $sockname NICK $me
+    sockclose $hget(link,$sockname)
+    window -c @exploit- $+ $sockname
+    halt
+  }
+  elseif ($1 == AUTH) && ($3 == S) { sockwrite -tn $hget(link,$sockname) $1- | halt }
+  elseif ($1-3 == AUTH GateKeeperPassport *) { echo -s Lookups connection complete - Gate $+ $chr(58) $4 | halt }
+  elseif ($1-3 == AUTH GateKeeper *) { 
+    sockwrite -tn $sockname NICK $me
+    sockclose $hget(link,$sockname)
+    window -c @exploit- $+ $sockname
+    echo -s rewt Lookups connection complete - Gate $+ $chr(58) $4
+    halt
+  }
+  elseif ($1 == AUTH) && ($3 == I) { sockwrite -tn $hget(link,$sockname) $1- }
+  if ($$2 == 613) { 
+    sockwrite -tn sckMIRC :rewt NOTICE $me :Found %JOIN on $TKIdent($remove($4-,:))
+    sockwrite -tn sckMIRC :rewt NOTICE $me :Attempting to join
+    var %x = $getrndsckhash
+    socklisten fchan. $+ %x $FreePort
+    sockopen chan. $+ %x $remove($4,:) $5
+    sockmark chan. $+ %x %join
+    hadd -m channels %join chan. $+ %x
+    hadd -m ips chan. $+ %x $remove($4,:)
+    Link chan. $+ %x lchan. $+ %x
+    halt
+  }
+
+  if ($$2 == 908) { echo -s Lookups Authentication has Failed. Updating... | ud }
+  if ($$2 == 702) { 
+    .set %key. [ $+ [ %join ] ] $rand(10000,99999)
+    set %createmode l 999999
+    set %createsection EN-US
+    set %createcat CP
+    set %createtopic rewt
+    sockwrite -tn $sockname CREATE %createcat %join %createtopic %createmode %createsection 1 %key. [ $+ [ %join ] ] 0
+    showdebug NewRoom = CREATE %createcat %join %createtopic %createmode %createsection 1 %key. [ $+ [ %join ] ] 0
+    sockwrite -tn sckMIRC $1- - Creating %join
+    halt
+  }
+  else $iif($$1 == AUTH || $$2 == NICK,halt,sockwrite -tn sckMIRC $1-)
+}
+
+on *:socklisten:fchan.*:{
+  sockaccept l $+ $right($sockname,-1)
+  sockclose $sockname
+}
+
+on *:sockread:lchan.?????:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  showdebug $sockname : $1-
+  if ($1 == IRCVERS) { sockwrite -tn $hget(link,$sockname) IRCVERS IRC5 MSNTV!8.00.0211.1802 | halt }
+  if ($$1 == AUTH) && ($3 == I) {
+    if ($left($me,1) == >) { sockwrite -tn $hget(link,$sockname) $1- }
+    else { sockwrite -tn $hget(link,$sockname) $1-2 $+ Passport $3- }
+  }
+  elseif ($1 == AUTH) && ($3 == S) { 
+    if (> !isin $me) || (!%rndgg) { sockwrite -n $hget(link,$sockname) $1- }
+    elseif (%rndgg == on) {
+      set %guestid 123456781234567812345678 $+ $rand(11111111,99999999)
+      var %buff1 = $remove(%data,$left(%data,44))
+      var %x = $len(%buff1)
+      var %y = 0
+      var %z = 16
+      while (%y <= 16) {
+        if ($mid(%buff1,%x,1) == \) { dec %x | inc %z }
+        dec %x
+        inc %y
+      }
+      var %guestform = $guestform(%guestid)
+      var %a = 1
+      while (%a <= 32) {
+        if ($mid(%guestform,%a,2) == 00) { var %guest_asc = %guest_asc $+ \0 | inc %a 2 }
+        if ($mid(%guestform,%a,2) == 09) { var %guest_asc = %guest_asc $+ \t | inc %a 2 }
+        if ($mid(%guestform,%a,2) == 0A) { var %guest_asc = %guest_asc $+ \n | inc %a 2 }
+        if ($mid(%guestform,%a,2) == 0D) { var %guest_asc = %guest_asc $+ \r | inc %a 2 }
+        if ($mid(%guestform,%a,2) == 20) { var %guest_asc = %guest_asc $+ \b | inc %a 2 }
+        if ($mid(%guestform,%a,2) == 2C) { var %guest_asc = %guest_asc $+ \c | inc %a 2 }
+        if ($mid(%guestform,%a,2) == 5C) { var %guest_asc = %guest_asc $+ \\ | inc %a 2 }
+        else { var %guest_asc = %guest_asc $+ $dehex($mid(%guestform,%a,2)) | inc %a 2 }
+      }
+      sockwrite -tn $hget(link,$sockname) $remove(%data,$right(%data,%z)) $+ %guest_asc | halt
+    }
+    else { sockwrite -tn $hget(link,$sockname) $1- | halt }
+  }
+  elseif ($$1 == NICK) { sockclose $sockname | window -c @exploit- $+ $hget(link,$sockname) }
+  else { sockwrite -tn $hget(link,$sockname) $1- }
+}
+
+on *:sockopen:chan.?????:{
+  if (> !isin $me) { sockwrite -tn $sockname NICK $me }
+  showdebug Got Exploit $CreateExploithWND($sock($sockname).ip,$sock(f $+ $sockname).port,$sockname)
+  .timerkeepfinds $+ $sockname 0 15 KeepFinds $sockname
+  hadd -m sck $sockname %join
+}
+
+on *:sockread:chan.?????:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if ($$2 == 351) { halt }
+  showdebug $sockname : $1-
+  if ($1-4 == AUTH Gatekeeper S :OK) {
+    sockwrite -tn $sockname AUTH GatekeeperPassport S : $+ $passform(%ticket,%profile)
+    sockwrite -tn $sockname USER $me "rewt" "rewt.co.uk" :4rewt
+    sockwrite -tn $sockname MODE $me +i
+    sockwrite -tn $sockname PROP $me MSNPROFILE : $+ %msnprofile
+    sockclose $hget(link,$sockname)
+    window -c @exploit- $+ $sockname
+    sockwrite -tn $sockname JOIN $sock($sockname).mark
+    halt
+  }
+  elseif ($1 == AUTH) && ($3 == S) { sockwrite -tn $hget(link,$sockname) $1- | halt }
+  elseif ($1-3 == AUTH GateKeeperPassport *) { echo -s rewt connection complete - Passport Gate $+ $chr(58) $4 | halt }
+  elseif ($1-3 == AUTH GateKeeper *) { 
+    sockwrite -tn $sockname USER $me "rewt" "rewt.co.uk" :4rewt
+    sockwrite -tn $sockname NICK $me
+    sockclose $hget(link,$sockname)
+    window -c @exploit- $+ $sockname
+    echo -s rewt connection complete - Guest Gate $+ $chr(58) $4
+    sockwrite -tn $sockname JOIN $sock($sockname).mark
+    halt
+  }
+  elseif ($1 == AUTH) && ($3 == I) { sockwrite -tn $hget(link,$sockname) $1- }
+  elseif ($$2 == 908) { halt }
+  elseif ($2 == JOIN) {
+    sockwrite -tn sckmirc $1-
+    if ($gettok($3,4,44)) { sockwrite -n sckmIRC :rewt MODE $remove($4,:) + $+ $replace($gettok($3,4,44),.,q,@,o,+,v) $remove($gettok($1,1,33),:) }
+  }
+  elseif ($2 == QUIT) { sockwrite -tn sckmIRC $1 PART $sock($sockname).mark }
+  elseif ($2 == 353) {
+    if ($chr(44) isin $6) {
+      var %a = 6
+      var %b
+      while (%a <= $0) {
+        if (%b == $null) %b = $remove($gettok($gettok($1-,%a,32),4,44),:)
+        else %b = %b $gettok($gettok($1-,%a,32),4,44)
+        inc %a
+      }
+      sockwrite -n sckmIRC :rewt 353 $me = $5 : $+ %b
+    }
+    else { sockwrite -n sckmIRC $1- }
+  }
+  elseif ($2 == 914) { halt }
+  elseif ($4 == OWNERKEY) {
+    set %key. $+ $3 $remove($5,:)
+    sockwrite -tn sckmIRC $1- 
+  }
+  elseif ($4 == HOSTKEY) {
+    set %hkey. $+ $3 $remove($5,:)
+    sockwrite -tn sckmIRC $1- 
+  }
+  elseif ($2 == MODE) && ($4 $5 == -q $me) && ($remove($gettok($1,1,33),$chr(58)) != $me) {
+    echo # 4Sockread has picked up a deowner from $remove($gettok($1,1,33),$chr(58))
+    if (!%massflood) {
+      sockwrite -n $sockname mode $me +h %key. [ $+ [ $3 ] ] $cr kick $3 $remove($gettok($1,1,33),$chr(58)) :Sockread has picked up a deowner from $remove($gettok($1,1,33),$chr(58)) $cr prop $3 OWNERKEY $rewtkey $cr access $3 CLEAR $cr access $3 add owner $ial($me) 0 : $+ 4rewt $+ $crlf
+      sockwrite -tn sckmIRC $1- 
+      set -u2 %massflood
+    }
+  }
+  elseif ($2 == MODE) && ($4 $5 == +q $me) { 
+    if (!%sockownerflood) {
+      set -u3 %sockownerflood TRUE | sockwrite -n $sockname prop $3 OWNERKEY $rewtkey | sockwrite -tn $sockname ACCESS $3 ADD OWNER $ial($me).addr 0 $chr(58) $+ 4rewt
+    }
+    sockwrite -tn sckmIRC $1- 
+  }
+  elseif ($2 == 821) {
+    echo $sock($sockname).mark 3*** Back $remove($gettok($1,1,33),$chr(58))
+    if ($remove($gettok($1,1,33),$chr(58)) ==  Sky  ) { sockwrite -tn $sockname AWAY }
+    halt 
+  }
+  elseif ($2 == 822) { 
+    echo $sock($sockname).mark 3*** Away $remove($gettok($1,1,33),$chr(58)) reason: $remove($3-,:)
+    if ($remove($gettok($1,1,33),$chr(58)) ==  Sky  ) { sockwrite -tn $sockname AWAY : $+ $remove($3-,:) }
+    halt 
+  }
+  elseif ($2 == KICK) && ($4 == $me) && ($remove($gettok($1,1,33),$chr(58)) != $me) {
+    echo -s 4Sockread Detected a Kick from $remove($gettok($1,1,33),:)
+    sockwrite -n $sockname join $3 %key. [ $+ [ $3 ] ] $lf kick $3 $remove($gettok($1,1,33),:) :Sockread has picked up a Kick from $remove($gettok($1,1,33),:) $lf prop $3 OWNERKEY rewt $+ $rand(1000,9999) $+ // $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $lf access $3 clear $lf access $3 add owner $ial($me).addr 0 : rewt $+ $me $cr
+  }
+  elseif ($2 == PRIVMSG) {
+    if ($4 == :DCC) && ($5 == send) && ($len($6-) >= 225) { echo -s 4 WARNING! $remove($gettok($1,1,33),:) Just Try'd to DCC Exploit you. | halt }
+    if (!%quickctcp) {
+      if (ADMIN$VERSION isin $4) { echo -s 14[15ADMIN$VERSION14]1:4 $remove($gettok($1,1,33),:) | ctcpreply $remove($gettok($1,1,33),:) VERSION [4rewt] | halt }
+      elseif (VERSION isin $4) { echo -s 14[15VERSION14]1:4 $remove($gettok($1,1,33),:) | ctcpreply $remove($gettok($1,1,33),:) VERSION [4rewt] | halt }
+      elseif (TIME isin $4) { echo -s 14[15TIME14]1:4 $remove($gettok($1,1,33),:) | if (!%timefloodsck) { ctcpreply $remove($gettok($1,1,33),:) TIME $date(dd/mm/yyyy) $+ , $time(h:nn:ss TT) | set -u10 %timefloodsck TRUE } | return }
+      elseif (PING isin $4) { echo -s 14[15PING14]1:4 $remove($gettok($1,1,33),:) | sockwrite -tn sckmIRC $1- }
+      elseif (FINGER isin $4) { echo -s 14[15FINGER14]1:4 $remove($gettok($1,1,33),:) | halt }
+      elseif (ID isin $4) { echo -s 14[15ID14]1:4 $remove($gettok($1,1,33),:) | halt }
+      set -u10 %quickctcp 
+    }
+    if (: $+ $chr(1) $+ S isin $1-) { sockwrite -tn sckmIRC $1 $2 $3 : $+ $left($6-,-1) | halt }
+    else sockwrite -tn sckmIRC $1-
+  }
+  else $iif($$1 == AUTH,halt,sockwrite -tn sckMIRC $1-)
+}
+
+alias updateme {
+  if (%usrnamepass) { ud }
+}
+
+alias ud {
+  window -c @update
+  window -hp @update
+  if (!%usrnamepass) { set %usrnamepass $$?"Whats the Useraccount and password? (seperate by space)" }
+  var %a = %usrnamepass
+  set %c.addr $replace($gettok(%a,1,32),@,$chr(37) $+ 40)
+  set %c.pass $replace($gettok(%a,2,32),@,$chr(37) $+ 40)
+  var %dll = $dll(nHTMLn.dll,attach,$window(@update).hwnd)
+  if (%dll != S_OK) && (%dll != E_ALREADY_ATTACHED) echo -s nhtmln error. %dll
+  showdebug $dll(nHTMLn,handler,nHTMLn.handler)
+  echo -s $dll(nHTMLn.dll,navigate,https://login.passport.com/ppsecure/post.srf?id=2260&ru=http://chat.msn.com/chatroom.msnw%3frm%3d20s&login= $+ %c.addr $+ &passwd= $+ %c.pass)
+
+}
+alias nHTMLn.handler {
+  if (http://chat.msn.com/chatroom.msnw?did=1&t= isin $3-) {
+    set %ticket $left($gettok($3,3,61),$calc($len($gettok($3,3,61)) - 2))
+    set %profile $left($gettok($3,4,61),$calc($len($gettok($3,4,61)) - 3))
+    if ($dll(nHTMLn.dll,navigate,http://login.passport.com/logout.srf?lc=1033&sf=1&id=2260&ru=http://chat.msn.com/chatroom.msnw%3frm%3d20s&tw=20&fs=0&cb=&cbid=2260&ts=0&login= $+ %c.addr $+ &domain=hotmail.com&sec=&mspp_shared=&lm=S&seclog=0) != S_OK) { echo -s nhtmln error. }
+    echo -s 4Passport info updated successfully!
+    echo -s 4You may now join a channel.
+    if (%runonce) {
+      unset %runonce
+      ILHC
+      .timerupdate 0 18000 updateme
+    }
+    .timerfinupdate 1 10 window -c @update
+  }
+  if ($2- == navigate_complete http://login.passport.net/uilogin.srf?id=2260) { echo -s $dll(nHTMLn.dll,navigate,about:blank) }
+  if ($2- == navigate_complete http://login.passport.com/logout.srf?lc=1033&sf=1&id=2260&ru=http://chat.msn.com/chatroom.msnw%3frm%3d20s&tw=20&fs=0&cb=&cbid=2260&ts=0&login= $+ %c.addr $+ &domain=hotmail.com&sec=&mspp_shared=&lm=S&seclog=0) { dll nHTMLn navigate about:blank }
+  if ($2- == navigate_complete http://login.passport.net/uilogout.srf?lc=1033&sf=1&id=2260&ru) { echo -s $dll(nHTMLn.dll,navigate,https://login.passport.com/ppsecure/post.srf?id=2260&ru=http://chat.msn.com/chatroom.msnw%3frm%3d20s&login= $+ %c.addr $+ &passwd= $+ %c.pass)  }
+  if (navigate_begin http://login.passport.net/UICookiesDisabled.srf?id= isin $2-3) {
+    dll nHTMLn navigate https://registernet.passport.net/editprof.srf?lc=2057&id=10&lc=2057&login= $+ %c.addr $+ &passwd= $+ %c.pass $+ &msppchlg=1&mspplogin= $+ $&
+      https://loginnet.passport.com/login.srf?lc=2057&id=10&ru= $+ $&
+      https://registernet.passport.net/editprof.srf%3Flc%3D2057%26id%3D10%26cbid%3D486%26lc%3D2057%26login%3Dilihcrgciduq%40msn.com%26passwd%3D $+ k3wl3yb0t $+ $&
+      &tw=20&fs=1&kv=5&ct=1053700805&cb=&cbid=486&ems=1&ver=2.5.0641.2&tpf=ff12cc19aaced36ec7de53a7f82c4ba9&cbid=486
+  }
+  if (opening page http://memberservices.passport.net/memberservice.srf isin $2-) { dll nHTMLn navigate http://loginnet.passport.com/login.srf?lc=2057&tw=200000&NoTp=1&newprof=1&id=10&ru=https://registernet.passport.net/epcongrats.srf%3fcbid%3d486%26lc%3d2057&cbid=486 }
+  if (opening page https://registernet.passport.net/epcongrats.srf? isin $2-) { dll nHTMLn navigate http://login.passport.com/logout.srf?lc=1033&sf=1&id=2260&ru }
+  if (document_complete https://registernet.passport.net/epcongrats.srf? isin $2-) { dll nHTMLn navigate http://login.passport.com/logout.srf?lc=1033&sf=1&id=2260&ru }
+  return S_OK
+}

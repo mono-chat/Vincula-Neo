@@ -1,0 +1,21 @@
+;Getip script by Sky
+;
+;Normally you cannot use $ip to get your IP.
+;Insted I have made this little bit of code to return your ip :)
+;Enjoy!
+
+alias GrabIP {
+  sockclose ipgrab
+  sockopen ipgrab whatismyip.com 80
+}
+
+on *:sockopen:ipgrab:{
+  sockwrite -n $sockname GET / HTTP/1.1
+  sockwrite -n $sockname HOST: whatismyip.com
+  sockwrite -n $sockname User-Agent: compatible; * $+ $crlf $+ $crlf
+}
+
+on *:sockread:ipgrab:{
+  var %data | sockread %data | tokenize 32 %data
+  if ($left($1-,7) == <TITLE>) echo -a $left($mid($1-,8),-8)  
+}

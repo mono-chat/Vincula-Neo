@@ -1,0 +1,943 @@
+;######################################
+;# Switchbar
+;# Coded By zBrute
+;# ©2004 - All Rights Reserved.
+;######################################
+alias sbar {
+  if ($dialog(sbar)) { dll $RebaR UnDock Left | dialog -x sbar sbar }
+  else { dialog -m sbar sbar }
+}
+dialog sbar {
+  title "sbar"
+  size -1 -1 70 376
+  option dbu
+  button "", 1, -2 -1 85 400
+}
+on *:dialog:sbar:init:0: {
+  var %d = $dname
+  dll $mdx SetMircVersion $version
+  dll $mdx MarkDialog %d
+  dll $mdx SetDialog tool style
+  dll $mdx SetControlMDX %d 1 Window > $dmdx
+  window -ph @Switchbar
+  did -a %d 1 grab $window(@Switchbar).hwnd @Switchbar
+  dll $RebaR Dock $dialog(%d).hwnd > Left
+  drawswitch
+}
+alias drawswitch {
+  var %win = @Switchbar, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+  var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+  $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+  $readini(%dir,%a,tc), %hl = $readini(%dir,%a,hl), %hlt = $readini(%dir,%a,hlt), %list =  $readini(%dir,%a,list)
+  drawrect -rf %win %bc 0 0 0 5000 5000
+  drawbutton %win 8 1 132 16 %hl %oc %st %sb 500 500 Bright 10 %tc ÿ
+  drawbutton %win 8 16 132 $calc($window(-2).h - $c_height(268)) %list %oc %st %sb 500 500 Bright 
+  10 %tc ÿ
+  drawtext -r %win %hlt Terminal 10 12 6 Switchbar
+  drawbutton %win 8 $calc($window(-2).h - $c_height(249)) 132 16 %hl %oc %st %sb 500 500 Bright 10 
+  %tc ÿ
+  drawtext -r %win %hlt Terminal 10 12 $calc($window(-2).h - $c_height(245)) DCC
+  drawbutton %win 8 $calc($window(-2).h - $c_height(234)) 132 134 %list %oc %st %sb 500 500 Bright 
+  10 %tc ÿ
+  load.switch %tc
+}
+alias load.switch {
+  var %win = @Switchbar, %tc = $1
+  if ($dialog(sbar)) {
+    var %a = 1, %l = 24, %winz = 0
+    while (%a <= $scid(0)) {
+      scon %a
+      if (%l != 24) { inc %l 16 }
+      drawtext -r %win %tc Wingdings 8 14 %l è
+      drawtext -r %win %tc Terminal 10 26 %l $switch_cut_2($iif($server = $null,Status 
+      Window,$iif($scid($scid($scon(%a))).network ==  $null,$scid($scid($scon(%a))).server,$scid($scid($scon(%a))).network)))
+      var %x = 1
+      inc %l 14
+      drawdot -r %win %tc 1 28 $calc(%l - 3)
+      drawdot -r %win %tc 1 28 $calc(%l - 1)
+      drawdot -r %win %tc 1 28 $calc(%l + 1)
+      drawdot -r %win %tc 1 28 $calc(%l + 3)
+      drawdot -r %win %tc 1 30 $calc(%l + 3)
+      drawdot -r %win %tc 1 32 $calc(%l + 3)
+      drawdot -r %win %tc 1 34 $calc(%l + 3)
+      drawdot -r %win %tc 1 36 $calc(%l + 3)
+      var %r_l = $calc(%l + 5)
+      drawtext -r %win %tc Terminal 10 41 %l Channels
+      while (%x <= $chan(0)) {
+        inc %l 14
+        drawdot -r %win %tc 1 42 $calc(%l - 3)
+        drawdot -r %win %tc 1 42 $calc(%l - 1)
+        drawdot -r %win %tc 1 42 $calc(%l + 1)
+        drawdot -r %win %tc 1 42 $calc(%l + 3)
+        drawdot -r %win %tc 1 44 $calc(%l + 3)
+        drawdot -r %win %tc 1 46 $calc(%l + 3)
+        drawdot -r %win %tc 1 48 $calc(%l + 3)
+        if (%x != 1) {
+          drawdot -r %win %tc 1 42 $calc(%l - 9)
+          drawdot -r %win %tc 1 42 $calc(%l - 7)
+          drawdot -r %win %tc 1 42 $calc(%l - 5)
+        }
+        drawtext -r %win %tc Terminal 10 54 %l $switch_cut($chan(%x))
+        inc %x
+      }
+      var %x = 1
+      inc %l 14
+      while (%r_l <= %l) {
+        drawdot -r %win %tc 1 26 %r_l
+        inc %r_l 2
+      }
+      drawdot -r %win %tc 1 26 $calc(%l + 1)
+      drawdot -r %win %tc 1 26 $calc(%l + 3)
+      drawdot -r %win %tc 1 26 $calc(%l + 3)
+      drawdot -r %win %tc 1 28 $calc(%l + 3)
+      drawdot -r %win %tc 1 30 $calc(%l + 3)
+      drawdot -r %win %tc 1 32 $calc(%l + 3)
+      drawdot -r %win %tc 1 34 $calc(%l + 3)
+      drawtext -r %win %tc Terminal 10 39 %l Queries
+      while (%x <= $query(0)) {
+        inc %l 14
+        drawdot -r %win %tc 1 42 $calc(%l - 3)
+        drawdot -r %win %tc 1 42 $calc(%l - 1)
+        drawdot -r %win %tc 1 42 $calc(%l + 1)
+        drawdot -r %win %tc 1 42 $calc(%l + 3)
+        drawdot -r %win %tc 1 44 $calc(%l + 3)
+        drawdot -r %win %tc 1 46 $calc(%l + 3)
+        drawdot -r %win %tc 1 48 $calc(%l + 3)
+        if (%x != 1) {
+          drawdot -r %win %tc 1 42 $calc(%l - 9)
+          drawdot -r %win %tc 1 42 $calc(%l - 7)
+          drawdot -r %win %tc 1 42 $calc(%l - 5)
+        }
+        drawtext -r %win %tc Terminal 10 54 %l $switch_cut($query(%x))
+        inc %x
+      }
+      inc %a
+    }
+    var %x = 1
+    inc %l 16
+    drawtext -r %win %tc Wingdings 8 12 %l è
+    drawtext -r %win %tc Terminal 10 24 %l Windows
+    while (%x <= $window(0)) {
+      if ($window(%x) isin @Toolbar @Sidebar @Switchbar @mp3move @s_bar) { goto inc }
+      inc %l 14
+      inc %winz
+      drawdot -r %win %tc 1 26 $calc(%l - 3)
+      drawdot -r %win %tc 1 26 $calc(%l - 1)
+      drawdot -r %win %tc 1 26 $calc(%l + 1)
+      drawdot -r %win %tc 1 26 $calc(%l + 3)
+      drawdot -r %win %tc 1 28 $calc(%l + 3)
+      drawdot -r %win %tc 1 30 $calc(%l + 3)
+      drawdot -r %win %tc 1 32 $calc(%l + 3)
+      if (%winz != 1) {
+        drawdot -r %win %tc 1 26 $calc(%l - 9)
+        drawdot -r %win %tc 1 26 $calc(%l - 7)
+        drawdot -r %win %tc 1 26 $calc(%l - 5)
+      }
+      drawtext -r %win %tc Terminal 10 39 %l $switch_cut_2($window(%x))
+      :inc
+      inc %x
+    }
+    if ($window(Channels List)) {
+      inc %l 14
+      inc %winz
+      drawdot -r %win %tc 1 26 $calc(%l - 3)
+      drawdot -r %win %tc 1 26 $calc(%l - 1)
+      drawdot -r %win %tc 1 26 $calc(%l + 1)
+      drawdot -r %win %tc 1 26 $calc(%l + 3)
+      drawdot -r %win %tc 1 28 $calc(%l + 3)
+      drawdot -r %win %tc 1 30 $calc(%l + 3)
+      drawdot -r %win %tc 1 32 $calc(%l + 3)
+      if (%winz != 1) {
+        drawdot -r %win %tc 1 26 $calc(%l - 9)
+        drawdot -r %win %tc 1 26 $calc(%l - 7)
+        drawdot -r %win %tc 1 26 $calc(%l - 5)
+      }
+      drawtext -r %win %tc Terminal 10 39 %l $switch_cut_2(@Channels List)
+    }
+    if ($window(Links List)) {
+      inc %l 14
+      inc %winz
+      drawdot -r %win %tc 1 26 $calc(%l - 3)
+      drawdot -r %win %tc 1 26 $calc(%l - 1)
+      drawdot -r %win %tc 1 26 $calc(%l + 1)
+      drawdot -r %win %tc 1 26 $calc(%l + 3)
+      drawdot -r %win %tc 1 28 $calc(%l + 3)
+      drawdot -r %win %tc 1 30 $calc(%l + 3)
+      drawdot -r %win %tc 1 32 $calc(%l + 3)
+      if (%winz != 1) {
+        drawdot -r %win %tc 1 26 $calc(%l - 9)
+        drawdot -r %win %tc 1 26 $calc(%l - 7)
+        drawdot -r %win %tc 1 26 $calc(%l - 5)
+      }
+      drawtext -r %win %tc Terminal 10 39 %l $switch_cut_2(@Links List)
+    }
+    var %l = $calc($window(-2).h - 226)
+    drawtext -r %win %tc Wingdings 8 12 %l è
+    drawtext -r %win %tc Terminal 10 24 %l DCC
+    var %x = 1
+    inc %l 14
+    drawdot -r %win %tc 1 26 $calc(%l - 3)
+    drawdot -r %win %tc 1 26 $calc(%l - 1)
+    drawdot -r %win %tc 1 26 $calc(%l + 1)
+    drawdot -r %win %tc 1 26 $calc(%l + 3)
+    drawdot -r %win %tc 1 28 $calc(%l + 3)
+    drawdot -r %win %tc 1 30 $calc(%l + 3)
+    drawdot -r %win %tc 1 32 $calc(%l + 3)
+    drawdot -r %win %tc 1 34 $calc(%l + 3)
+    var %r_l = $calc(%l + 5)
+    drawtext -r %win %tc Terminal 10 39 %l Get
+    while (%x <= $get(0)) {
+      inc %l 14
+      drawdot -r %win %tc 1 42 $calc(%l - 3)
+      drawdot -r %win %tc 1 42 $calc(%l - 1)
+      drawdot -r %win %tc 1 42 $calc(%l + 1)
+      drawdot -r %win %tc 1 42 $calc(%l + 3)
+      drawdot -r %win %tc 1 44 $calc(%l + 3)
+      drawdot -r %win %tc 1 46 $calc(%l + 3)
+      drawdot -r %win %tc 1 48 $calc(%l + 3)
+      if (%x != 1) {
+        drawdot -r %win %tc 1 42 $calc(%l - 9)
+        drawdot -r %win %tc 1 42 $calc(%l - 7)
+        drawdot -r %win %tc 1 42 $calc(%l - 5)
+      }
+      drawtext -r %win %tc Terminal 10 54 %l $switch_cut($get(%x))
+      inc %x
+    }
+    var %x = 1
+    inc %l 14
+    while (%r_l <= %l) {
+      drawdot -r %win %tc 1 26 %r_l
+      inc %r_l 2
+    }
+    drawdot -r %win %tc 1 26 $calc(%l + 1)
+    drawdot -r %win %tc 1 26 $calc(%l + 3)
+    drawdot -r %win %tc 1 26 $calc(%l + 3)
+    drawdot -r %win %tc 1 28 $calc(%l + 3)
+    drawdot -r %win %tc 1 30 $calc(%l + 3)
+    drawdot -r %win %tc 1 32 $calc(%l + 3)
+    drawdot -r %win %tc 1 34 $calc(%l + 3)
+    drawtext -r %win %tc Terminal 10 39 %l Send
+    while (%x <= $send(0)) {
+      inc %l 14
+      drawdot -r %win %tc 1 42 $calc(%l - 3)
+      drawdot -r %win %tc 1 42 $calc(%l - 1)
+      drawdot -r %win %tc 1 42 $calc(%l + 1)
+      drawdot -r %win %tc 1 42 $calc(%l + 3)
+      drawdot -r %win %tc 1 44 $calc(%l + 3)
+      drawdot -r %win %tc 1 46 $calc(%l + 3)
+      drawdot -r %win %tc 1 48 $calc(%l + 3)
+      if (%x != 1) {
+        drawdot -r %win %tc 1 42 $calc(%l - 9)
+        drawdot -r %win %tc 1 42 $calc(%l - 7)
+        drawdot -r %win %tc 1 42 $calc(%l - 5)
+      }
+      drawtext -r %win %tc Terminal 10 54 %l $switch_cut($send(%x))
+      inc %x
+    }
+    var %x = 1
+    inc %l 14
+    while (%r_l <= %l) {
+      drawdot -r %win %tc 1 26 %r_l
+      inc %r_l 2
+    }
+    drawdot -r %win %tc 1 26 $calc(%l + 1)
+    drawdot -r %win %tc 1 26 $calc(%l + 3)
+    drawdot -r %win %tc 1 26 $calc(%l + 3)
+    drawdot -r %win %tc 1 28 $calc(%l + 3)
+    drawdot -r %win %tc 1 30 $calc(%l + 3)
+    drawdot -r %win %tc 1 32 $calc(%l + 3)
+    drawdot -r %win %tc 1 34 $calc(%l + 3)
+    drawtext -r %win %tc Terminal 10 39 %l Chat
+    while (%x <= $chat(0)) {
+      inc %l 14
+      drawdot -r %win %tc 1 42 $calc(%l - 3)
+      drawdot -r %win %tc 1 42 $calc(%l - 1)
+      drawdot -r %win %tc 1 42 $calc(%l + 1)
+      drawdot -r %win %tc 1 42 $calc(%l + 3)
+      drawdot -r %win %tc 1 44 $calc(%l + 3)
+      drawdot -r %win %tc 1 46 $calc(%l + 3)
+      drawdot -r %win %tc 1 48 $calc(%l + 3)
+      if (%x != 1) {
+        drawdot -r %win %tc 1 42 $calc(%l - 9)
+        drawdot -r %win %tc 1 42 $calc(%l - 7)
+        drawdot -r %win %tc 1 42 $calc(%l - 5)
+      }
+      drawtext -r %win %tc Terminal 10 54 %l $switch_cut($chat(%x))
+      inc %x
+    }
+  }
+}
+on *:signal:switchbar: {
+  if ($dialog(sbar)) {
+    if ($1 = update) { drawswitch }
+    if ($1 = sclick) {
+      var %a = 1, %l = 12
+      while (%a <= $scid(0)) {
+        scon %a
+        if (%l != 26) { inc %l 14 }
+        if ($inrect($2,$3,18,%l,116,10)) { scid $scid($scon(%a)) window -ax "Status Window" }
+        var %x = 1
+        inc %l 14
+        while (%x <= $chan(0)) {
+          inc %l 14
+          if ($inrect($2,$3,18,%l,116,10)) { window -ax $chan(%x) }
+          inc %x
+        }
+        var %x = 1
+        inc %l 14
+        while (%x <= $query(0)) {
+          inc %l 14
+          if ($inrect($2,$3,18,%l,116,10)) { window -ax $query(%x) }
+          inc %x
+        }
+        inc %a
+      }
+      var %x = 1
+      inc %l 14
+      while (%x <= $window(0)) {
+        if ($window(%x) isin @Toolbar @Sidebar @Switchbar @mp3move @s_bar) { goto inc }
+        inc %l 14
+        if ($inrect($2,$3,18,%l,116,10)) { window -ax $window(%x) }
+        :inc
+        inc %x
+      }
+      if ($window(Channels List)) {
+        inc %l 14
+        if ($inrect($2,$3,18,%l,116,10)) { window -ax "Channels List" }
+      }
+      if ($window(Links List)) {
+        inc %l 14
+        if ($inrect($2,$3,18,%l,116,10)) { window -ax "Links List" }
+      }
+      var %x = 1
+      var %l = $calc($window(-2).h - 212)
+      while (%x <= $get(0)) {
+        inc %l 14
+        if ($inrect($2,$3,18,%l,116,10)) { window -ax "Get $get(%x) $get(%x).file $+ " }
+        inc %x
+      }
+      var %x = 1
+      inc %l 14
+      while (%x <= $send(0)) {
+        inc %l 14
+        if ($inrect($2,$3,18,%l,116,10)) { window -ax "Send $send(%x) $send(%x).file $+ " }
+        inc %x
+      }
+      var %x = 1
+      inc %l 14
+      while (%x <= $chat(0)) {
+        inc %l 14
+        if ($inrect($2,$3,18,%l,116,10)) { window -ax = $+ $chat(%x) }
+        inc %x
+      }
+    }
+  }
+}
+menu @Switchbar {
+  sclick:{ .signal -n switchbar sclick $mouse.x $mouse.y }
+}
+alias switch_cut {
+  if ($len($1) > 11) { return $+($left($1,8),...) }
+  else { return $1 }
+}
+alias switch_cut_2 {
+  if ($len($1) > 14 ) { return $+($left($1,11),...) }
+  else { return $1 }
+}
+
+
+
+
+;# Toolbar
+;# Coded By zBrute
+;# ©2004 - All Rights Reserved.
+;######################################
+alias tbar {
+  if ($dialog(tool)) { dll $RebaR UnDock Top | dialog -x tool tool }
+  else { dialog -m tool tool }
+}
+dialog tool {
+  title "toolbar"
+  size -1 -1 3000 5
+  option dbu
+  button "", 1, -1 0 5000 30
+}
+on *:dialog:tool:init:0: {
+  var %d = $dname
+  dll $mdx SetMircVersion $version
+  dll $mdx MarkDialog %d
+  dll $mdx SetDialog tool style
+  dll $mdx SetControlMDX %d 1 Window > $dmdx
+  window -ph @Toolbar
+  did -a %d 1 grab $window(@Toolbar).hwnd @Toolbar
+  dll $RebaR Dock $dialog(%d).hwnd > top
+  drawtbar
+  dll $sz WatchMirc .
+}
+alias drawtbar {
+  var %win = @Toolbar, %dir = system\Database\schemes.ini, %a = $sysini(Scheme), %insong
+  var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+  $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+  $readini(%dir,%a,tc), %sep = $readini(%dir,%a,sep)
+  if (!$insong) { %insong = Nothing. }
+  else { %insong = $remove($remove($insong.fname,$sysini(mp3dir)),.mp3) }
+  drawrect -rf %win %bc 0 0 0 5000 5000
+  drawbutton %win 4 3 $calc($window(-2).w - 31) 28 %bg %oc %st %sb 11 9 Bright 20 %tc ÿ
+  drawbutton %win $calc($window(-2).w - 24) 3 15 28 %bg %oc %st %sb 11 9 Bright 20 %tc ÿ
+  drawbutton %win 9 7 20 20 %bc %oc $iif($1 = 1,%sb %st,%st %sb) 11 9 Wingdings 16 %tc :
+  drawbutton %win 32 7 6 20 %sep %oc %st %sb 20 100 Bright 20 %tc ÿ
+  drawbutton %win 41 7 20 20 %bc %oc $iif($1 = 2,%sb %st,%st %sb) 48 11 Terminal 14 %tc A
+  drawbutton %win 64 7 20 20 %bc %oc $iif($1 = 3,%sb %st,%st %sb) 70 11 Terminal 14 %tc P
+  drawbutton %win 87 7 20 20 %bc %oc $iif($1 = 4,%sb %st,%st %sb) 93 11 Terminal 14 %tc R
+  drawbutton %win 110 7 6 20 %sep %oc %st %sb 20 100 Bright 20 %tc ÿ
+  drawbutton %win 119 7 20 20 %bc %oc $iif($1 = 5,%sb %st,%st %sb) 123 7 Webdings 16 %tc ~
+  drawbutton %win 142 7 6 20 %sep %oc %st %sb 20 100 Bright 20 %tc ÿ
+  drawbutton %win 151 7 20 20 %bc %oc $iif($1 = 6,%sb %st,%st %sb) 155 8 Webdings 16 %tc N
+  drawbutton %win 174 7 6 20 %sep %oc %st %sb 20 100 Bright 20 %tc ÿ
+  drawbutton %win 183 7 20 20 %bc %oc $iif($1 = 7,%sb %st,%st %sb) 190 11 Terminal 14 %tc ?
+  drawbutton %win 206 7 6 20 %sep %oc %st %sb 20 100 Bright 20 %tc ÿ
+  drawbutton %win 215 7 $calc($window(-2).w - 269) 20 %bc %oc %st %sb 222 13 Terminal 10 %tc 
+  $l_mp3
+  drawbutton %win $calc($window(-2).w - 51) 7 6 20 %sep %oc %st %sb 20 100 Bright 20 %tc ÿ
+  drawbutton %win $calc($window(-2).w - 42) 7 10 20 %bc %oc $iif($1 = 9,%sb %st,%st %sb) 
+  $calc($window(-2).w - $iif($1 = 9,43,44)) 8 Webdings 16 %tc 4
+  drawtext -r %win %tc Webdings 11 $calc($window(-2).w - 22) 0 r
+  drawtext -r %win %tc Webdings 12 $calc($window(-2).w - 23) 10 1
+  drawtext -r %win %tc Webdings 12 $calc($window(-2).w - 23) 14 0
+}
+alias drawbutton {
+  ;; /drawbutton <window> < x y w h > <button color> <outline color> <shadow color (top)> <shadow 
+  color (bottom)> <text x> <text y> <text font> <font size> <text>
+  var %win = $1, %x = $2, %y = $3, %w = $4, %h = $5, %bc = $6, %oc = $7, %sct = $8, %scb = $9, %tx 
+  = $10, %ty = $11, %font = $12, %size = $13, %tc = $14, %text = $15-
+  drawrect -r %win %oc 2 %x %y %w %h
+  drawrect -r %win %sct 1 $calc(%x + 1) $calc(%y + 1) $calc(%w - 2) $calc(%h - 2)
+  drawrect -r %win %scb 1 $calc(%x + 2) $calc(%y + 2) $calc(%w - 3) $calc(%h - 3)
+  drawrect -rf %win %bc 1 $calc(%x + 2) $calc(%y + 2) $calc(%w - 4) $calc(%h - 4)
+  drawtext -r %win %tc %font %size %tx %ty %text
+}
+menu @Toolbar {
+  sclick:{
+    if ($inrect($mouse.x,$mouse.y,10,8,20,20)) { drawtbar 1 | .timer -m 1 200 drawtbar | sendkeys O }
+    if ($inrect($mouse.x,$mouse.y,42,8,20,20)) { drawtbar 2 | .timer -m 1 200 drawtbar | sendkeys A }
+    if ($inrect($mouse.x,$mouse.y,65,8,20,20)) { drawtbar 3 | .timer -m 1 200 drawtbar | sendkeys P }
+    if ($inrect($mouse.x,$mouse.y,88,8,20,20)) { drawtbar 4 | .timer -m 1 200 drawtbar | sendkeys R }
+    if ($inrect($mouse.x,$mouse.y,120,8,20,20)) { drawtbar 5 | .timer -m 1 200 drawtbar | mp3 }
+    if ($inrect($mouse.x,$mouse.y,152,8,20,20)) { drawtbar 6 | .timer -m 1 200 drawtbar | theme }
+    if ($inrect($mouse.x,$mouse.y,184,8,20,20)) { drawtbar 7 | .timer -m 1 200 drawtbar | help }
+    if ($inrect($mouse.x,$mouse.y,$calc($window(-2).w - 42),8,10,20)) { drawtbar 9 | tbarpopup }
+    if ($inrect($mouse.x,$mouse.y,$calc($window(-2).w - 23),3,10,10)) {
+      if ($chan = %active) { set %a true | part $chan }
+      if (Status Window = %active) { halt }
+      if (Links List = %active) || (Channels List = %active) || (Notify List = %active) { window -c " $+  %active 
+      $+ " }
+      else { window -c %active }
+    }
+    if ($inrect($mouse.x,$mouse.y,$calc($window(-2).w - 23),13,10,10)) { window -x " $+ %active $+ " }
+    if ($inrect($mouse.x,$mouse.y,$calc($window(-2).w - 23),25,10,6)) { window -n " $+ %active $+ " }
+  }
+}
+menu @TbarPopup {
+  sclick:{
+    var %win = @TbarPopup
+    if ($inrect($mouse.x,$mouse.y,76,4,10,10)) { window -c %win | .signal -n toolbar close }
+    var %x 1, %l = 18, %num = $ini(system\Database\Schemes.ini,0)
+    while (%x <= %num) {
+      if ($inrect($mouse.x,$mouse.y,18,%l,80,10)) { c_scheme $ini(system\Database\Schemes.ini,%x) | 
+      .signal -n toolbar close | window -c %win }
+      inc %x
+      inc %l 15
+    }
+  }
+}
+alias tbar_popup {
+  dll $popup New schemes 7 7
+  var %x 1
+  while (%x <= $ini(system\Database\Schemes.ini,0)) {
+    dll $popup AddItem schemes end $iif($sysini(Scheme) = $ini(system\Database\Schemes.ini,%x),+x,+a) 
+    $ini(system\Database\Schemes.ini,%x) $cr c_scheme $ini(system\Database\Schemes.ini,%x)
+    inc %x
+  }
+  do-popup schemes $mouse.dx $mouse.dy
+}
+alias tbarpopup {
+  var %win = @TbarPopup, %dir = system\Database\schemes.ini, %a = $sysini(Scheme), %num = 
+  $ini(system\Database\Schemes.ini,0), %l = 17
+  var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+  $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+  $readini(%dir,%a,tc), %hl = $readini(%dir,%a,hl)
+  if (%num != 0) { inc %l $calc(15 * %num) }
+  window -Bdpa +dL %win $mouse.dx $mouse.dy 90 %l
+  drawrect -rf %win %bc 0 0 0 500 500
+  drawrect -r %win %st 1 1 1 88 $calc(%l - 2)
+  drawrect -r %win %sb 1 2 2 87 $calc(%l - 3)
+  drawrect -r %win %bc 1 2 2 86 $calc(%l - 4)
+  drawrect -r %win %oc 1 0 0 90 %l
+  drawbutton %win 1 1 89 16 %bg %oc %st %sb 8 6 Terminal 10 %tc Schemes
+  drawbutton %win 76 4 10 10 %bc %oc %st %sb 78 6 Webdings 6 %tc r
+  if (%num > 0) { drawbutton %win 1 16 16 $calc(%l - 16) %bg %oc %st %sb 8 6 Bright 20 %tc ÿ }
+  var %x 1, %l = 20
+  while (%x <= %num) {
+    if ($sysini(Scheme) = $ini(system\Database\Schemes.ini,%x)) { drawtext -r %win %tc Webdings 12 4 
+    $calc(%l - 6) a }
+    drawtext -r %win %tc Terminal 10 18 %l $tbar_cut($ini(system\Database\Schemes.ini,%x))
+    inc %x
+    inc %l 14
+  }
+}
+alias c_scheme {
+  sysini Scheme $1
+  drawtbar
+  if ($dialog(side)) drawside
+  if ($dialog(sbar)) drawswitch
+  if ($dialog(s_bar)) draws_bar
+}
+alias l_mp3 {
+  if (!$insong) { var %return = Nothing. | goto end }
+  else {
+    var %song = $remove($remove($insong.fname,$sysini(mp3dir)),.mp3)
+    var %bitrate = $sound($insong.fname).bitrate
+    var %time = $duration($round($calc($int($calc($lof($insong.fname) * .008)) / %bitrate),1))
+    var %time = $getnum($gettok(%time,1,32)) $+ : $+ $iif($gettok(%time,2,32) = 
+    $null,00,$iif($len($getnum($gettok(%time,2,32))) = 1,0 $+  $getnum($gettok(%time,2,32)),$getnum($gettok(%time,2,32))))
+    var %return = %song ( $+ %time $+ )
+    goto end
+  }
+  :end
+  return Mp3 Playing: %return
+}
+alias tbar_cut {
+  if ($len($1) > 10) { return $+($left($1,7),...) }
+  else { return $1 }
+}
+on *:signal:toolbar: {
+  if ($1 = close) { drawtbar }
+}
+
+
+;######################################
+;# Picwin Query
+;# Coded By zBrute
+;# ©2004 - All Rights Reserved.
+;######################################
+alias whisper {
+  if (!$1) { echo -s * Invalid Parameters. | halt }
+  if ($1 = -n) {
+    set %who_nick $2
+    var %win = @Query_ $+ %who_nick
+    if ($window(%win)) {
+      set %qmsg_ $+ %who_nick $3-
+      x-gui Richedit %win > Echo 1 14  $+ %who_nick says:
+      x-gui Richedit %win > Echo 1 1    $+ $wrap(%qmsg_ [ $+ [ %who_nick ] ],Verdana,6,160,1)
+      drawrect -rf %win $rgb(213,225,245) 1 14 278 310 16
+      drawtext -rpb %win $rgb(60,77,129) $rgb(213,225,245) Tahoma 11 16 280 Last message received on 
+      $asctime(m/d/yyyy) at $time(h:nn TT) $+ .
+      query_print %win %qmsg_ [ $+ [ %who_nick ] ]
+      .timer 1 1 unset %finding
+      unset %exist
+      unset %who_nick
+      halt
+    }
+    set %who_nick $2
+    set %qmsg_ $+ %who_nick $3-
+    set %finding true
+    whois $2
+    halt
+  }
+  set %finding true
+  set %who_nick $1
+  who $1
+}
+menu @Query_* {
+  sclick: {
+    var %win = $active
+    if ($inrect($mouse.x,$mouse.y,3,3,360,16)) { query_move %win $calc($mouse.dx -$window(%win).x) 
+    $calc($mouse.dy -$window(%win).y) }
+    if ($inrect($mouse.x,$mouse.y,369,4,10,12)) { window -n %win }
+    if ($inrect($mouse.x,$mouse.y,383,4,10,12)) { window -c %win | .signal -n query close %win }
+    if ($inrect($mouse.x,$mouse.y,328,230,46,40)) {
+      .msg $remove(%win,@Query_) $dll(system\dlls\x-gui.dll,Editbox,@Query_fewl > GetText 2)
+      send_msg %win $dll(system\dlls\x-gui.dll,Editbox,@Query_fewl > GetText 2)
+      x-gui Delete %win > 2
+      x-gui Create %win > editbox 2 14 225 300 50 multi
+      x-gui Set %win > style 2 windowedge
+      x-gui Set %win > font 2 Tahoma > 10 0 0 0 0
+    }
+  }
+}
+alias query_move {
+  var %win = $1
+  if ($window(%win)) {
+    window %win $calc($mouse.dx -$2) $calc($mouse.dy -$3)
+    if ($mouse.key & 1) {
+      .timerquery_move -o 1 0 query_move $1-
+    }
+  }
+}
+alias query_print {
+  var %s = 1, %text = $2-, %w = 160, %win = $1
+  while (%s < $wrap(%text,Tahoma,11,%w,0)) {
+    inc %s
+    x-gui Richedit %win > Echo 1 1   $+ $wrap(%text,Tahoma,11,%w,%s)
+  }
+}
+alias send_msg {
+  var %win = $1, %text = $2-
+  x-gui Richedit %win > Echo 1 14  $+ $me says:
+  x-gui Richedit %win > Echo 1 1    $+ $wrap(%text,Tahoma,11,160,1)
+  query_print %win %text
+}
+alias sendmsg { set %query_msg blah }
+on ^*:text:*:?: { whisper -n $nick $1- | halt }
+on 1:OPEN:?:*:{ .timer -m 1 500 window -c $nick | halt }
+raw *:*: {
+  var %n = $numeric
+  if (%n = 352) {
+    if (%finding = true) {
+      var %win = @Query_ $+ %who_nick
+      window -BCpdoa +d %win -1 -1 399 299
+      drawpic %win 0 0 system\query.bmp
+      x-gui Mark %win
+      x-gui Create %win > richedit 1 14 60 363 154 vsbar
+      x-gui Set %win > style 1 windowedge
+      x-gui Set %win > font 1 Tahoma > 10 0 0 0 0
+      x-gui Create %win > editbox 2 14 225 300 50 multi
+      x-gui Set %win > style 2 windowedge
+      x-gui Set %win > font 2 Tahoma > 10 0 0 0 0
+      drawtext -rnpb %win $rgb(60,77,129) $rgb(235,241,250) Tahoma 11 20 30 To: %who_nick < $+ $3 
+      $+ @ $+ $4 $+ >
+      set %exist true
+      halt
+    }
+  }
+  if (%n = 315) {
+    if (%finding = true) {
+      if (!%exist) { echo -s * %who_nick is not online. }
+      unset %finding
+      unset %exist
+      unset %who_nick
+      halt
+    }
+  }
+  if (%n = 311) {
+    if (%finding = true) {
+      var %win = @Query_ $+ %who_nick
+      window -BCpdoa +d %win -1 -1 399 299
+      drawpic %win 0 0 system\query.bmp
+      x-gui Mark %win
+      x-gui Create %win > richedit 1 14 60 363 154 vsbar
+      x-gui Set %win > style 1 windowedge
+      x-gui Set %win > font 1 Tahoma > 10 0 0 0 0
+      x-gui Create %win > editbox 2 14 225 300 50 multi
+      x-gui Set %win > style 2 windowedge
+      x-gui Set %win > font 2 Tahoma > 10 0 0 0 0
+      drawtext -rnpb %win $rgb(60,77,129) $rgb(235,241,250) Tahoma 11 20 30 To: %who_nick < $+ $3 
+      $+ @ $+ $4 $+ >
+      x-gui Richedit %win > Echo 1 14  $+ %who_nick says:
+      x-gui Richedit %win > Echo 1 1    $+ $wrap(%qmsg_ [ $+ [ %who_nick ] ],Verdana,6,160,1)
+      drawrect -rf %win $rgb(213,225,245) 1 14 278 310 16
+      drawtext -rpb %win $rgb(60,77,129) $rgb(213,225,245) Tahoma 11 16 280 Last message received on 
+      $asctime(m/d/yyyy) at $time(h:nn TT) $+ .
+      query_print %win %qmsg_ [ $+ [ %who_nick ] ]
+      .timer 1 1 unset %finding
+      unset %exist
+      unset %who_nick
+      halt
+    }
+  }
+}
+;######################################
+;# Side Bar
+;# Coded By zBrute
+;# ©2004 - All Rights Reserved.
+;######################################
+alias side {
+  if ($dialog(side)) { dll $RebaR UnDock right | dialog -x side side }
+  else { dialog -m side side }
+}
+dialog side {
+  title "side panel"
+  size -1 -1 72 376
+  option dbu
+  button "", 1, -1 -1 90 400
+}
+on *:dialog:side:init:0: {
+  var %d = $dname
+  dll $mdx SetMircVersion $version
+  dll $mdx MarkDialog %d
+  dll $mdx SetDialog tool style
+  dll $mdx SetControlMDX %d 1 Window > $dmdx
+  window -ph @Sidebar
+  did -a %d 1 grab $window(@Sidebar).hwnd @Sidebar
+  dll $RebaR Dock $dialog(%d).hwnd > right
+  drawside
+  .timersysinfo 0 3 sysinfo
+}
+on *:dialog:side:close:*: { .timersysinfo off }
+alias drawside {
+  var %win = @Sidebar, %dir = system\Database\schemes.ini, %a = $sysini(Scheme), %insong
+  var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+  $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+  $readini(%dir,%a,tc), %hl = $readini(%dir,%a,hl), %hlt = $readini(%dir,%a,hlt), %list =  $readini(%dir,%a,list), %nhbg = 
+  $readini(%dir,%a,nhbg), %nho = $readini(%dir,%a,nho)
+  drawrect -rf %win %bc 0 0 0 5000 5000
+  drawbutton %win 5 1 138 16 %hl %oc %st %sb 500 500 Bright 10 %tc ÿ
+  drawbutton %win 5 16 138 $calc($window(-2).h - $c_height(218)) %list %oc %st %sb 500 500 Bright 
+  10 %tc ÿ
+  drawtext -r %win %hlt Terminal 10 12 6 Notify List $notifynum
+  drawbutton %win 5 16 18 $calc($window(-2).h - $c_height(218)) %hl %oc %st %sb 500 500 Bright 10 
+  %tc ÿ
+  notifylist %tc %bg %nhbg %nho
+  sysinfo
+}
+alias notifylist {
+  var %win = @Sidebar, %tc = $1, %bg = $2, %nhbg = $3, %nho = $4
+  if ($dialog(side)) {
+    var %a = 1, %l = 21, %x = 1
+    while (%a <= $notify(0)) {
+      if ($notify(%a).ison = $true) {
+        drawtext -r %win %tc Webdings 12 10 $calc(%l - 5) a
+        drawtext -r %win %tc Terminal 10 27 %l $notify(%a)
+        if ($hget(notify,nick) = $notify(%a)) { drawrect -r %win %nho 1 25 $calc(%l - 1) 112 10 | drawrect -rf 
+        %win %nhbg 1 26 %l 110 8 | drawtext -r %win %tc Terminal 10 27 %l $notify(%a) }
+        inc %l 12
+      }
+      inc %a
+    }
+    var %a = 1
+    while (%a <= $notify(0)) {
+      if ($notify(%a).ison = $false) {
+        drawtext -r %win %tc Webdings 10 11 $calc(%l - 4) r
+        drawtext -r %win %tc Terminal 10 27 %l $notify(%a)
+        if ($hget(notify,nick) = $notify(%a)) { drawrect -r %win %nho 1 25 $calc(%l - 1) 112 10 | drawrect -rf 
+        %win %nhbg 1 26 %l 110 8 | drawtext -r %win %tc Terminal 10 27 %l $notify(%a) }
+        inc %l 12
+      }
+      inc %a
+    }
+  }
+}
+menu @Sidebar {
+  rclick:{
+    var %win = @Sidebar, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+    var %tc = $readini(%dir,%a,tc), %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg))
+    var %a = 1, %l = 20
+    while (%a <= $notify(0)) {
+      if ($notify(%a).ison = $true) {
+        if ($inrect($mouse.x,$mouse.y,18,%l,116,12)) { drawside | notifypopup $notify(%a) }
+        inc %l 12
+      }
+      inc %a
+    }
+    var %a = 1
+    while (%a <= $notify(0)) {
+      if ($notify(%a).ison = $false) {
+        if ($inrect($mouse.x,$mouse.y,18,%l,116,12)) { drawside | notifypopup $notify(%a) }
+        inc %l 12
+      }
+      inc %a
+    }
+  }
+  sclick:{
+    var %win = @Sidebar, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+    var %tc = $readini(%dir,%a,tc), %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg))
+    var %a = 1, %l = 24
+    while (%a <= $notify(0)) {
+      if ($notify(%a).ison = $true) {
+        if ($inrect($mouse.x,$mouse.y,18,%l,116,12)) { hadd -m notify nick $notify(%a) | drawside }
+        inc %l 12
+      }
+      inc %a
+    }
+    var %a = 1
+    while (%a <= $notify(0)) {
+      if ($notify(%a).ison = $false) {
+        if ($inrect($mouse.x,$mouse.y,18,%l,116,12)) { hadd -m notify nick $notify(%a) | drawside }
+        inc %l 12
+      }
+      inc %a
+    }
+  }
+  dclick:{ drawside }
+}
+alias notifynum {
+  var %a = 1, %num = $notify(0), %y = 0
+  while ($notify(%a)) {
+    if ($notify(%a).ison = $true) { inc %y }
+    inc %a
+  }
+  return ( $+ %y $+ / $+ %num $+ )
+}
+alias c_notify {
+  if ($1 = -r) { notify -r $2 | window -c @NotifyPopup | drawside | halt }
+  if ($1 = add) {
+    var %addy = $input(Please enter name and note (optional):,109,Notify List)
+    if (%addy != $null) { notify %addy | window -c @NotifyPopup | drawside | halt }
+  }
+}
+alias sysinfo {
+  lag_update
+  var %win = @Sidebar, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+  var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+  $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+  $readini(%dir,%a,tc), %hl = $readini(%dir,%a,hl), %hlt = $readini(%dir,%a,hlt), %list =  $readini(%dir,%a,list)
+  drawbutton %win 5 $calc($window(-2).h - $c_height(199)) 138 16 %hl %oc %st %sb 500 500 Bright 10 
+  %tc ÿ
+  drawbutton %win 5 $calc($window(-2).h - $c_height(184)) 138 85 %list %oc %st %sb 500 500 Bright 
+  10 %tc ÿ
+  drawtext -r %win %hlt Terminal 10 12 $calc($window(-2).h - $c_height(195)) Lag: $iif($server = 
+  $null,unknown,%lag secs)
+  if (!$server) { drawtext -r %win %tc Terminal 14 34 $calc($window(-2).h - $c_height(150)) Ready... }
+  if ($server) {
+    var %i = 108, %y = 178
+    while (%i <= %y) {
+      drawdot -r %win %tc 1 12 $calc($window(-2).h - %y)
+      dec %y 2
+    }
+    var %i = 134, %y = 12
+    while (%y <= %i) {
+      drawdot -r %win %tc 1 %y $calc($window(-2).h - 108)
+      inc %y 2
+    }
+    lag_draw %win %tc
+  }
+}
+alias lag_draw {
+  var %win = $1, %tc = $2, %y = 1, %d = 129
+  while (%y <= $ini(system\lag.ini,lag,0)) {
+    var %l = $readini(system\lag.ini,lag,%y)
+    if ($gettok(%l,1,46) > 20) { var %lag_ = 20 }
+    else { var %lag_ = $gettok(%l,1,46) }
+    var %lag_calc = $lag_calc(%lag_)
+    drawrect -rf %win %tc 1 %d $calc($window(-2).h - $win_lag(%lag_calc)) 6 %lag_calc
+    inc %y
+    dec %d 8
+  }
+}
+alias win_lag {
+  var %a = 180, %b = 70, %c = $1
+  var %d = $calc(%b - %c)
+  var %d = $calc(%a - $calc(%a - %d))
+  return $calc(%a - %d)
+}
+alias lag_calc {
+  var %l = $1
+  var %a = 20, %b = 70, %c = $calc(%l * %b)
+  %c = $calc(%c / %a)
+  return $gettok(%c,1,46)
+}
+alias c_height {
+  var %m = $dll($utools,MenuBarState,NULL), %s = S_OK SHOWN
+  if (%m != %s) { return $1 }
+  if (%m = %s) { return $calc($1 + 20) }
+}
+alias lag_update {
+  if ($server) {
+    set %lag_time $ticks
+    .raw ping %lag_time
+  }
+}
+alias notifypopup {
+  hadd -m notify nick $1
+  var %win = @NotifyPopup, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+  var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+  $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+  $readini(%dir,%a,tc), %hl = $readini(%dir,%a,hl), %hlt = $readini(%dir,%a,hlt)
+  window -Bdpa +dL %win $mouse.dx $mouse.dy 80 100
+  drawrect -rf %win %bc 0 0 0 500 500
+  drawrect -r %win %st 1 1 1 78 98
+  drawrect -r %win %sb 1 2 2 77 97
+  drawrect -r %win %bc 1 2 2 76 96
+  drawrect -r %win %oc 1 0 0 80 100
+  drawbutton %win 1 1 79 16 %bg %oc %st %sb 8 6 Terminal 10 %hlt $notify_cut($1)
+  drawbutton %win 66 4 10 10 %bc %oc %st %sb 68 6 Webdings 6 %tc r
+  drawtext -r %win %tc Terminal 10 8 20 $note_cut($iif($notify($1).note != 
+  $null,$notify($1).note,Unknown))
+  drawrect -r %win %tc 1 5 31 70 1
+  drawrect -r %win %tc 1 5 35 70 12
+  drawrect -r %win %tc 1 5 51 70 12
+  drawrect -r %win %tc 1 5 67 70 12
+  drawrect -r %win %tc 1 5 83 70 12
+  drawtext -r %win %tc Terminal 10 8 37 Remove
+  drawtext -r %win %tc Terminal 10 8 53 Add New
+  drawtext -r %win %tc Terminal 10 8 69 Query
+  drawtext -r %win %tc Terminal 10 8 85 Whois
+}
+alias notify_cut {
+  if ($len($1) > 9) { return $+($left($1,6),...) }
+  else { return $1 }
+}
+alias note_cut {
+  if ($len($1) > 11) { return $+($left($1,8),...) }
+  else { return $1 }
+}
+menu @NotifyPopup {
+  sclick:{
+    var %win = @NotifyPopup, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+    var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %tc = $readini(%dir,%a,tc)
+    if ($inrect($mouse.x,$mouse.y,66,4,10,10)) { window -c %win | .signal -n notify close }
+    if ($inrect($mouse.x,$mouse.y,5,35,70,12)) { c_notify -r $hget(notify,nick) | .signal -n notify close }
+    if ($inrect($mouse.x,$mouse.y,5,51,70,12)) { c_notify add | .signal -n notify close }
+    if ($inrect($mouse.x,$mouse.y,5,67,70,12)) { query $hget(notify,nick) | window -c %win | .signal -n 
+    notify close }
+    if ($inrect($mouse.x,$mouse.y,5,83,70,12)) { whois $hget(notify,nick) | window -c %win | .signal -n 
+    notify close }
+  }
+  mouse:{
+    var %win = @NotifyPopup, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+    var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+    $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+    $readini(%dir,%a,tc), %hl = $readini(%dir,%a,hl)
+    if ($inrect($mouse.x,$mouse.y,5,35,70,12)) { drawrect -rf %win %bg 1 6 36 68 10 | drawtext -r %win 
+    %tc Terminal 10 8 37 Remove | set %cmd remove | halt }
+    if ($inrect($mouse.x,$mouse.y,5,51,70,12)) { drawrect -rf %win %bg 1 6 52 68 10 | drawtext -r %win 
+    %tc Terminal 10 8 53 Add New | set %cmd add | halt }
+    if ($inrect($mouse.x,$mouse.y,5,67,70,12)) { drawrect -rf %win %bg 1 6 68 68 10 | drawtext -r %win 
+    %tc Terminal 10 8 69 Query | set %cmd query | halt }
+    if ($inrect($mouse.x,$mouse.y,5,83,70,12)) { drawrect -rf %win %bg 1 6 84 68 10 | drawtext -r %win 
+    %tc Terminal 10 8 85 Whois | set %cmd whois | halt }
+    else {
+      if (%cmd = remove) { drawrect -rf %win %bc 1 6 36 68 10 | drawtext -r %win %tc Terminal 10 8 37 
+      Remove | unset %cmd }
+      if (%cmd = add) { drawrect -rf %win %bc 1 6 52 68 10 | drawtext -r %win %tc Terminal 10 8 53 Add 
+      New | unset %cmd }
+      if (%cmd = query) { drawrect -rf %win %bc 1 6 68 68 10 | drawtext -r %win %tc Terminal 10 8 69 Query 
+      | unset %cmd }
+      if (%cmd = whois) { drawrect -rf %win %bc 1 6 84 68 10 | drawtext -r %win %tc Terminal 10 8 85 
+      Whois | unset %cmd }
+    }
+  }
+}
+menu @Notify_Online {
+  sclick:{ .timernotify_off off | window -c @Notify_Online }
+}
+on 1:close:@:{
+  if ($target = @NotifyPopup) { .signal -n notify close }
+  if ($target = @TbarPopup) { .signal -n toolbar close }
+}
+on *:signal:notify: {
+  if ($1 = close) { hadd -m notify nick 0 | drawside }
+}
+alias notify_online {
+  var %n = $1
+  var %win = @Notify_Online, %dir = system\Database\schemes.ini, %a = $sysini(Scheme)
+  var %bg = $iif($readini(%dir,%a,bg) = face,$rgb(face),$readini(%dir,%a,bg)), %bc = 
+  $readini(%dir,%a,bc), %oc = $readini(%dir,%a,oc), %st = $readini(%dir,%a,st), %sb =  $readini(%dir,%a,sb), %tc = 
+  $readini(%dir,%a,tc), %hl = $readini(%dir,%a,hl), %hlt = $readini(%dir,%a,hlt)
+  window -haodpk +nL %win $calc($window(-1).w - 120) $calc($window(-1).h - 80) 120 80
+  drawrect -rf %win %bc 0 0 0 500 500
+  drawrect -r %win %st 1 1 1 118 78
+  drawrect -r %win %sb 1 2 2 117 77
+  drawrect -r %win %bc 1 2 2 116 76
+  drawrect -r %win %oc 1 0 0 120 80
+  drawbutton %win 1 1 112 16 %bg %oc %st %sb 8 6 Terminal 10 %hlt Notify
+  if ($len(%n) > 14) { var %n = $left(%n,11) $+ ... }
+  drawtext -r %win %tc Terminal 10 $n_len(%n) 30 %n
+  drawtext -r %win %tc Terminal 10 20 48 is now online.
+  splay sounds\online.wav
+  .timernotify_off 1 3 /window -c @Notify_Online
+}
+alias n_len {
+  var %a = 46, %b = $len($1-), %c = $calc(%b * 2)
+  return $calc(%a - %c)
+}

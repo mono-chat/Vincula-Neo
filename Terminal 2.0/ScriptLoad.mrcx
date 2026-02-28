@@ -1,0 +1,16 @@
+alias LoadTerminal {
+  ;load -rs Terminal.mrcx
+  ;load -rs MSN!ThemeV2.mrcx
+  ;load -rs MSNList.mrcx
+  ;load -rs CommonAlias.mrcx
+  ;load -rs Anti.mrcx
+  ;load -rs Underground.mrcx
+  ;load -rs Dream.mrcx
+  load -rs Link.mrcx
+  load -rs UserlistV2.mrcx
+  load -rs Protection.mrcx
+  load -rs Extra.mrcx
+  load -rs AccessChecker.mrcx
+  load -rs Colours.mrcx
+  load -rs Profile.mrcx
+}

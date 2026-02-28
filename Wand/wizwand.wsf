@@ -1,0 +1,60 @@
+#BASIC SCRIPTS
+YOU Join Room :%cn!*:JOIN::MODE %rn | $sound chatjoin.wav
+OTHERS Join Room :!!%cn!*@*:JOIN::WHOIS %np | PROP %np PUID | PRIVMSG %np :PING PING | $sound chatjoin.wav
+STAFF Joins Room :*!*@snd:JOIN::WHOIS %np | PROP %np PUID | $sound chattag.wav
+Kick Sound :*:KICK::$sound chatkick.wav
+Kick Protect :*:KICK:*:%cn::GOTO %rn %np | KICK %rn %np :I don't think so!
+#WHOIS Check :*:311:*:*:*:Gatekeeper*:*:*`*::ACCESS %rn ADD DENY *!%param5 180 :Script | KICK %rn %param4 :Unauthorized Use of Script
+#WHOIS Check :*:311:*:*:*:Gatekeeper*:*:**::ACCESS %rn ADD DENY *!%param5 180 :Script | KICK %rn %param4 :Unauthorized Use of Script
+#WHOIS Check :*:311:*:*:*:Gatekeeper*:*:*0  *::ACCESS %rn ADD DENY *!%param5 180 :Script | KICK %rn %param4 :Unauthorized Use of Script
+on :!!%cn!*:join:*::MODE %rn +v %np
+#STATUS, ECHO, AND PROP SCRIPTS
+#Disable Whispers :*:WHISPER::WHISPER %rn %np :ERR NOUSERWHISPER | $echo [%np] attempted to whisper you @ %time. | $halt
+Beep Whispers :*:WHISPER::$sound chatwhsp.wav
+Ignore List :Infile(ignore.lst):*::$halt
+MSN Broadcast :TK2CHATCHATA*:NOTICE:*::$halt
+Server Authentication :*:910::$echo Server Authentication Failed.
+Server Regstration :*:451::$echo You have not registered on this server.
+Server Access :*:465::$echo You are banned from this server.
+Nickname Registration :*:432::$echo You have chosen an Invalid Nickname.
+Nickname In Use :*:433::$echo Your nickname is already in use.
+Not IRC Operator :*:481::$echo Permission Denied - You are not an IRC Operator.
+Not Operator :*:482::$echo You are not a channel operator.
+Not Owner :*:485::$echo You are not a channel owner.
+Admin Restriction :*:906::$echo An Admin Restriction has prevented that action.
+Admin Restriction :*:908::$echo This person is a non subscriber and therfore cannot communicate in the room
+Room Access :*:913::$echo You do not have permission to perform that action, or you have been banned from this chatroom.
+Room Not Exist :*:702::$echo You cannot join this room because it does not exist.
+
+
+
+
+
+
+Room Full :*:471::$echo You cannot join this room because the room is full. (+l)
+Room Invite :*:473::$echo You cannot join this room because the room is invite only. (+i)
+Room Password :*:475::$echo You cannot join this room because it requires a password. (+k)
+Room Spectator :*:404::$echo You cannot speak in this room because you do not have Voice. (+m, -v)
+Unknown Command :*:421::$echo Unknown Command.
+Insufficient Parameters :*:461::$echo Insufficient Parameters.
+User is Away :*:301::$echo User is Currently Away for Reason: [%package]
+User Quits :*:QUIT::$echo User [%param1] QUIT for Reason: [%package]
+Room Props :*:818:*:%#*::$echo Properties for %rn : [%param5] : [%package]
+Server Info :*:371:*:*MSN*::$echo Server Information :
+Server Info :*:371:*:*MSN*::$echo %package
+Server Info :*:371:*:*On-line*::$echo %param1 %package
+
+/now $echo The Current Date and Time is : %date, %time GMT
+/hop part %rn | join %rn
+/bbl away :Away
+/back away
+/privmsg /privmsg %no
+/hop $reset
+/clear $clear
+/reset $reset
+/filter $fecho %param1
+/names names %rn
+/owner mode %cn +h %ok
+/host mode %cn +h %hk
+/iggy $ladd ignore.lst %param1 | $echo [%param1] was added to IgnoreList.
+/kicklist $ladd kicklist.lst %param1 | $echo [%param1] was added to KickList.

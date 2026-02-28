@@ -1,0 +1,101 @@
+;;;;;;Link - Project Duo;;;;;;
+
+alias underground return $chr(37) $+ #Underground
+
+alias Duo {
+  sockopen duo 127.0.0.1 6980
+}
+
+alias Terminal {
+
+  socklisten Terminal 6980
+  msg $underground Establishing link with SA...
+  .timerduofailed 1 15 timeout
+
+}
+
+alias timeout {
+  msg $underground Establishing Link has timed out. Closing socket.  
+  sockclose Terminal
+}
+
+on *:socklisten:Terminal:{
+  sockaccept bridge
+  sockclose $sockname 
+  msg $underground Connection Established to SA... Recieving data.
+  .timerduofailed off
+}
+
+on *:sockread:bridge:{
+  var %data 
+  sockread %data
+  tokenize 32 %data
+  if ($1 == SND) { msg $underground $2- }
+  elseif ($1 == BGN) { msg $underground Tracking $2 }
+  elseif ($1 == END) { msg $underground Tracking of $2 has ended. }
+  elseif ($1 == WHOIS) { msg $underground $3- }
+  else sockclose $sockname
+}
+
+on *:sockopen:duo:{
+  echo -a 4Connection Established.
+}
+
+on *:sockread:duo:{
+  var %data 
+  sockread %data
+  tokenize 32 %data
+  if ($1 == SAY) { msg %duoroom $2- }
+}
+
+menu channel {
+  $iif($me == duo,DuoSpyClient,$null)
+  .Setroom:{ set %duoroom $active }
+  .Establish:{ duo }
+  .Begin:{
+    if ($sock(duo).status == active) {
+      sockwrite -tn duo BGN %duoroom
+      .enable #read 
+    }
+  }
+  .End:{ 
+    if ($sock(duo).status == active) {
+      sockwrite -tn duo END %duoroom
+    }
+    .disable #read 
+  }
+
+  $iif($active == $underground,$iif($me != duo,DuoSpyServer,$null),$null)
+  .Listen:{ terminal }
+  .Close:{ sockclose terminal }
+  . $+ $sock(terminal).status $+ :{ echo -a $sock(terminal).status }
+}
+
+#Read on
+
+on *:text:*:#:{
+  if (# == %duoroom) && ($sock(duo).status == active) {
+    sockwrite -tn Terminal SND < $+ $nick $+ > $1-
+  }
+  elseif (# == $underground) {
+    if (!say isin $strip($1)) {
+      sockwrite -tn bridge SAY $2-
+      msg $underground <duo> $2-
+    }
+    elseif (!whois isin $strip($1)) {
+      sockwrite -tn bridge WHOIS $2-
+    }
+  }
+}
+
+on *:input:#:{
+  if (# == $underground) && (!say isin $1) { 
+    sockwrite -tn bridge SAY $2-
+    msg $underground <???> $2-
+  }
+  elseif (!whois isin $strip($1)) {
+    sockwrite -tn bridge WHOIS $2-
+  }
+}
+
+#Read end

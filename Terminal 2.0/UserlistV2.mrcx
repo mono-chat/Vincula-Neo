@@ -1,0 +1,820 @@
+;;;Userlist V2 by Sky;;
+
+;;;;;Event's
+
+on *:LOAD:{
+  ;oldvers check
+  if ($exists(Lists.ini)) { remove Lists.ini }
+  writeini -n Userlist.ini Global Halted False
+}
+
+alias enum_level {
+  if ($1 == b) { return 1 }
+  if ($1 == k) { return 2 }
+  if ($1 == v) { return 3 }
+  if ($1 == o) { return 4 }
+  if ($1 == q) { return 5 }
+  else return 0
+}
+
+on *:JOIN:#:{
+  if ($GetGlobalStatus == False) {
+    if ($IsGlobal($ial($nick).addr) == True) {
+      var %level = $GetLevel(Global,$ial($nick).addr)
+      if (%level == o) && ($IsHalted(#,#) == True) { halt }
+      if (%level == o) && ($IsChan(#,$ial($nick).addr) == True) && ($IsHalted(#,#) != True) { 
+        if ($enum_level($GetLevel(#,$ial($nick).addr)) > $enum_level(%level)) goto localaop
+      }
+      var %comment = $GetComment(Global,$ial($nick).addr)
+      if (%level == o) && ($nick isowner #) { halt }
+      if (%level == b) {
+        if ($IsHalted(#,#) == True) { halt }
+        elseif ($IsHalted(Global,$ial($nick).addr) != False) { halt }
+      }
+      if (%level != k) && (%level != b) {
+        msg # Global %level User $nick ( $+ %comment $+ )
+        if ($me isop #) && ($me !isowner #) && (%level == q) {
+          $+(.timer,$rand(a,z),$rand(a,z),$rand(a,z),modeup) 1 2 SetModeStatus $remove(#,$chr(37)) $nick o
+          halt
+        }
+        $+(.timer,$rand(a,z),$rand(a,z),$rand(a,z),modeup) 1 2 SetModeStatus $remove(#,$chr(37)) $nick %level
+        sockwrite -tn $hget(channels,#) MODE # %level $nick
+      }
+      elseif (%level == k) {
+        sockwrite $hget(channels,#) $+(kick # $nick :,%comment,$crlf)
+      }
+      elseif (%level == b) {
+        sockwrite $hget(channels,#) $+(access # add deny $ial($nick).addr,$lf,kick # $nick :,%comment,$crlf)           
+      }
+    }
+    elseif ($IsChan(#,$ial($nick).addr) == True) && ($IsHalted(#,#) != True) {
+      localaop:
+      var %level = $GetLevel(#,$ial($nick).addr)
+      var %comment = $GetComment(#,$ial($nick).addr) 
+      if (%level != k) && (%level != b) {
+        ;msg # Local %level User $nick ( $+ %comment $+ )
+        $+(.timer,$rand(a,z),$rand(a,z),$rand(a,z),modeup) 1 2 SetModeStatus $remove(#,$chr(37)) $nick %level
+      }
+      elseif (%level == k) {
+        sockwrite $hget(channels,#) $+(kick # $nick :,%comment,$crlf)
+      }
+      elseif (%level == b) {
+        sockwrite $hget(channels,#) $+(access # add deny $ial($nick).addr,$lf,kick # $nick :,%comment,$crlf)           
+      }      
+    }
+    elseif ($matchChan(#)) && $IsChan($ifmatch,$ial($nick).addr) == True) && ($IsHalted($ifmatch,$ifmatch) == False) && ($IsHalted($ifmatch,$ial($nick).addr) == False) {
+
+      var %level = $GetLevel(#,$ial($nick).addr)
+      var %comment = $GetComment(#,$ial($nick).addr) 
+      if (%level != k) && (%level != b) {
+        ;msg # Local %level User $nick ( $+ %comment $+ )
+        $+(.timer,$rand(a,z),$rand(a,z),$rand(a,z),modeup) 1 2 SetModeStatus $remove(#,$chr(37)) $nick %level
+      }
+      elseif (%level == k) {
+        sockwrite $hget(channels,#) $+(kick # $nick :,%comment,$crlf)
+      }
+      elseif (%level == b) {
+        sockwrite $hget(channels,#) $+(access # add deny $ial($nick).addr,$lf,kick # $nick :,%comment,$crlf)           
+      }
+    }
+  }
+}
+
+#CommonComment off
+#CommonComment end
+
+;;;;;Alias's
+
+;;;;;;;User Entries
+
+;Format
+;[%#Room\bName/Global]
+;Gate=Level,Halted,Comment
+;Halted=True/False
+;[WildCard]
+;ShortForm=LongForm
+
+alias -l matchChan {
+  var %i = 1
+  while (%i <= $ini(Userlist.ini,0)) {
+    var %temp = $ini(userlist.ini,%i)
+    if (%temp isin $1) && (%temp != $1) { return %temp }
+    inc %i
+  }
+}
+
+alias -l MchWildCard {
+  var %i = 1
+  while (%i <= $ini(Userlist.ini,0)) {
+    var %temp = $ini(userlist.ini,%i)
+    echo -a $1 %temp
+    if (%temp isin $1) && (%temp != $1) { return %temp }
+    inc %i
+  }
+}
+
+
+alias -l AddGlobalUser {
+  var %comment = $3-
+  if ($group(#CommonComment) == on) { %comment = $GetOldComment($1) }
+  if (%comment == $null) { %comment = $$?"Please enter in a reason." }
+  if (%comment == $null) { %comment = Non-Specified. }
+  writeini -n Userlist.ini Global $1 $+($2,$chr(44),False,$chr(44),%comment)
+  DoGlobalAction $1 $2 %comment
+}
+
+alias -l AddLocalUser {
+  var %comment = $4-
+  if ($group(#CommonComment) == on) { %comment = $GetOldComment($2) }
+  if (%comment == $null) { %comment = $$?"Please enter in a reason." }
+  if (%comment == $null) { %comment = Non-Specified. }
+  writeini -n Userlist.ini $1 $2 $+($3,$chr(44),False,$chr(44),%comment)
+  if ($readini(Userlist.ini,$1,Halted) == $null) { writeini -n Userlist.ini $1 Halted False }
+  if ($me ison $1) { DoLocalAction $1 $2 $3 %comment }
+  else { dolocalaction $active $2 $3 %comment }
+}
+
+alias -l RemGlobal {
+  remini -n Userlist Global $1
+}
+
+alias -l RemLocalUser {
+  remini -n Userlist.ini $1 $2
+}
+
+alias -l RemChannel {
+  remini -n Userlist.ini $1
+}
+
+alias -l HaltChannel {
+  writeini -n Userlist.ini $1 Halted True
+}
+
+alias -l HaltGlobal {
+  AltHalted Global $1 True
+}
+
+alias -l HaltUser {
+  AltHalted $1 $2 True
+}
+
+alias DoRemove {
+  if ($readini(Userlist.ini,Global,$1) != $null) { RemGlobal $1 }
+  elseif ($readini(Userlist.ini,$1,$2) != $null) { RemLocalUser $1 $2 }
+  elseif ($readini(Userlist.ini,$1,Halted) != $null) { RemChannel $1 }
+}
+
+alias -l AddMatchNick {
+  writeini -n Userlist.ini Names $1 $2
+}
+
+alias -l ResumeUser {
+  AltHalted $1 $2 False
+}
+
+alias -l ResumeChannel {
+  writeini -n Userlist.ini $1 Halted False
+}
+
+alias -l globHALT {
+  writeini -n Userlist.ini Global Halted True
+}
+
+alias -l globRESUME {
+  writeini -n Userlist.ini Global Halted False
+}
+
+alias -l ResumeGlobal {
+  AltHalted Global $1 False
+}
+
+alias GetComment {
+  return $gettok($readini(Userlist.ini,$1,$2),3,44)
+}
+alias GetOldComment {
+  var %i = 1
+  while (%i <= $ini(Userlist.ini,0)) {
+    var %x = 1
+    while (%x <= $ini(Userlist.ini,$ini(Userlist.ini,%i),0)) {
+      if ($ini(Userlist.ini,$ini(Userlist.ini,%i),%x) == $1) && ($ini(Userlist.ini,%i) != Names) {
+        return $gettok($readini(Userlist.ini,$ini(Userlist.ini,%i),$ini(Userlist.ini,$ini(Userlist.ini,%i),%x)),3,44)
+      }
+      inc %x
+    }
+    inc %i
+  }
+}
+
+alias -l RemGlobalUser {
+  remini Userlist.ini Global $1
+}
+
+alias -l DoGlobalAction {
+  var %nick = $ial(*! $+ $1).nick
+  var %i = 1
+  while (%i <= $chan(0)) {
+    var %z = 1
+    while (%z <= $nick($chan(%i),0)) {
+      if ($nick($chan(%i),%z) == %nick) {
+        if ($2 != k) && ($2 != b) {
+          msg $chan(%i) Global $2 User %nick ( $+ $3- $+ )
+          $+(.timer,$rand(a,z),$rand(a,z),$rand(a,z),modeup) 1 2 SetModeStatus $remove($chan(%i),$chr(37)) %nick $2
+        }
+        elseif ($2 == k) {
+          if ($me isowner #) || ($me isop #) {
+            sockwrite $hget(channels,$chan(%i)) $+(kick $chan(%i) %nick :,$3-,$crlf)
+          }
+        }
+        elseif ($2 == b) {
+          if ($me isowner #) || ($me isop #) {
+            sockwrite $hget(channels,$chan(%i)) $+(access $chan(%i) add deny $1,$lf,kick $chan(%i) %nick :,$3-,$crlf)
+          }
+        }
+      }
+      inc %z
+    }
+    inc %i
+  }
+}
+
+alias -l DoLocalAction {
+  var %nick = $ial(*! $+ $2).nick
+  if ($3 != k) && ($3 != b) {
+    msg $1 Local $3 User %nick ( $+ $4- $+ )
+    $+(.timer,$rand(a,z),$rand(a,z),$rand(a,z),modeup) 1 2 SetModeStatus $remove($1,$chr(37)) %nick $3
+  }
+  elseif ($3 == k) {
+    sockwrite $hget(channels,$chan(%i)) $+(kick $1 %nick :,$4-,$crlf)
+  }
+  elseif ($3 == b) {
+    sockwrite $hget(channels,$chan(%i)) $+(access $1 add deny $1,$lf,kick $1 %nick :,$4-,$crlf)
+  }
+}
+
+alias -l GetGlobalStatus {
+  return $readini(Userlist.ini,Global,Halted)
+}
+
+alias -l GetRoomStatus {
+  return $readini(Userlist.ini,$1,Halted)
+}
+
+alias -l IsGlobal {
+  if ($readini(Userlist.ini,Global,$1) != $null) { return True }
+  else { return False }
+}
+
+alias -l IsChan {
+  if ($readini(Userlist.ini,$1,$2) != $null) { return True }
+  else { return False }
+}
+
+
+alias -l DisableHalt {
+  if ($1-2 == Global Global) { globRESUME }
+  elseif ($gettok($readini(Userlist.ini,Global,$1),2,44) == True) { ResumeGlobal $1 }
+  elseif ($gettok($readini(Userlist.ini,$1,$2),2,44) == True) { ResumeUser $1 $2 }
+  elseif ($readini(Userlist.ini,$1,Halted) == True) { ResumeChannel $1 }
+}
+
+alias -l EnableHalt {
+  if ($1-2 == Global Global) { globHALT }
+  elseif ($gettok($readini(Userlist.ini,Global,$1),2,44) == False) { HaltGlobal $1 }
+  elseif ($gettok($readini(Userlist.ini,$1,$2),2,44) == False) { HaltUser $1 $2 }
+  elseif ($readini(Userlist.ini,$1,Halted) == False) { HaltChannel $1 }
+}
+
+alias -l GetLevel {
+  return $gettok($readini(Userlist.ini,$1,$2),1,44)
+}
+
+alias -l GetGLevel {
+  var %level = $GetLevel(Global,$1) 
+  if (%level == q) { return Owner }
+  if (%level == o) { return Host }
+  if (%level == v) { return Voice }
+  if (%level == k) { return Kick }
+  if (%level == b) { return Banlist }
+}
+
+alias GetLLevel {
+  var %level = $GetLevel($1,$2) 
+  if (%level == q) { return Owner }
+  if (%level == o) { return Host }
+  if (%level == v) { return Voice }
+  if (%level == k) { return Kick }
+  if (%level == b) { return Banlist }
+}
+
+alias SetModeStatus {
+  ;Format
+  ;Room Nick Level
+  mode $chr(37) $+ $1 $+(+,$3) $2
+}
+
+alias IsOnUserList {
+  if ($readini(Userlist.ini,$2,$1) != $null) { return True }
+  elseif ($readini(Userlist.ini,Global,$1) != $null) { return True }
+}
+
+alias AltList {
+  writeini -n Userlist.ini $1 $2 $+($gettok($readini(Userlist.ini,$2,$1),2,44),$chr(44),$3,$chr(44),$gettok($readini(Userlist.ini,$2,$1),3,44))
+}
+
+alias AltComment {
+  writeini -n Userlist.ini $1 $2 $+($gettok($readini(Userlist.ini,$1,$2),1-2,44),$chr(44),$3-)
+}
+
+alias AltHalted {
+  writeini -n Userlist.ini $1 $2 $+($gettok($readini(Userlist.ini,$1,$2),1,44),$chr(44),$3,$chr(44),$gettok($readini(Userlist.ini,$1,$2),3,44))
+}
+
+alias -l msn.decode {
+  var %r, %l 1
+  %r = $replace($1-,,B,,-,�>,-,,-,,-,,E,,C,,A,,R,,K,,y,ﺘ,i,ﺉ,s,דּ,t,טּ,u,ﻉ,e,,k,,F,,u,,g,Χ,X,,>,,$chr(37),,8,,d,,m,,h,ﻛ,s,,G,,M,,l,,s,,_,,T,,r,,a,,n,,c,,e,,N,,a,,t,,i,,o,,n,,f,,w,,\,,|,,@,,P,,D,,',,�,,$chr(40),,$chr(41),,*,,:,,[,,],,p,,.)
+  %r = $replace(%r,χ,X,ņ,n,Ω,n,��,y,р,p,Р,P,ř,r,х,x,Į,I,Ļ,L,Ф,o,Ĉ,C,ŏ,o,ũ,u,ń,n,Ģ,G,ŕ,r,ś,s,ķ,k,Ŗ,R,ז,i,ε,e,ק,r,ћ,h,м,m,،,�,ī,i,‘,�,’,�,۱,',ē,e,¢,�,,S,•,�,,O,,I,Ά,A,ъ,b,��,T,Φ,o,Ђ,b,я,r,Ё,E,д,A,К,K,Ď,D,и,n,θ,o,М,M,Ї,I,Т,T,Є,e,Ǻ,A,ö,�,ä,�,–,�,·,�,Ö,�,Ü,�,Ë,�,ѕ,s,ą,a,ĭ,i,й,n,в,b,о,o,ш,w,Ğ,G,đ,d,з,e,Ŧ,T,α,a,ğ,g,ú,�,Ŕ,R,Ą,A,ć,c,Đ,�,Κ,K,ў,y,µ,�,Í,�,‹,�,¦,�,Õ,�,Ù,�,À,�,Π,N,ғ,f,ΰ,u,Ŀ,L,ō,o,ς,c,ċ,c,ħ,h,į,i,ŧ,t,Ζ,Z,Þ,�,þ,�,ç,�,á,�,¾,�,ž,�,Ç,�,� $+ $chr(173),-,Á,�,…,�,¨,�,ý,�,ˉ,�,”,�,Û,�,ì,�,ρ,p,έ,e,г,r,à,�,È,�,¼,�,ĵ,j,ã,�,ę,e,ş,s,º,�,Ñ,�,ã,�,Æ,�,˚,�,Я,R,˜,�,Î,�,Ê,�,Ý,�,Ï,�,É,�,‡,�,Ì,�,ª,�,ó,�,™,�,Ò,�,í,�,¿,�,Ä,�,¶,�,ü,�,ƒ,�,ð,�,ò,�,õ,�,¡,�,é,�,ß,�,¤,�,×,�,ô,�,Š,�,ø,�,›,�,â,�,î,�,€,�,š,�,ï,�,ÿ,�,Ń,N,©,�,®,�,û,�,†,�,°,�,§,�,±,�,²,�,è,�)
+  %r = $replace(%r,Ň,N,۰,�,Ĵ,J,І,I,Σ,E,ι,i,Ő,O,δ,o,ץ,y,ν,v,ע,y,מ,n,Ž,�,ő,o,Č,C,ė,e,₤,L,Ō,O,ά,a,Ġ,G,Ω,O,Н,H,ể,e,ẵ,a,Ж,K,ề,e,ế,e,ỗ,o,ū,u,₣,F,∆,a,Ắ,A,ủ,u,Ķ,K,Ť,T,Ş,S,Θ,O,Ш,W,Β,B,П,N,ẅ,w,ﻨ,i,ﯼ,s,џ,u,ђ,h,¹,�,Ỳ,Y,λ,a,С,C,� $+ $chr(173),E,Ű,U,Ī,I,č,c,Ĕ,E,Ŝ,S,Ị,I,ĝ,g,ŀ,l,ї,i,٭,*,ŉ,n,Ħ,H,Д,A,Μ,M,ё,e,Ц,U,э,e,“,�,ф,o,у,y,с,c,к,k,Å,�,Ƥ,P,℞,R,,I,ɳ,n,ʗ,c,▫,�,ѓ,r,ệ,e,ắ,a,ẳ,a,ů,u,Ľ,L,ư,u,·,�,˙,',η,n,ℓ,l,,�,,�,,�,׀,i,ġ,g,Ŵ,W,Δ,A,ﮊ,J,μ,�,Ÿ,�,ĥ,h,β,�,Ь,b,ų,u,є,e,ω,w,Ċ,C,і,i,ł,l,ǿ,o,∫,s,ż,z,ţ,t,æ,�,≈,=,Ł,L,ŋ,n,گ,S,ď,d,ψ,w,σ,o,ģ,g,Ή,H,ΐ,i,ґ,r,κ,k,Ŋ,N,�,\,,/,¬,�,щ,w,ە,o,ם,o,³,�,½,�,İ,I,ľ,l,ĕ,e,Ţ,T,ŝ,s,ŷ,y,ľ,l,ĩ,i,Ô,�,Ś,S,Ĺ,L,а,a,е,e,Ρ,P,Ј,J,Ν,N,ǻ,a,ђ,h,ή,n,ί,l,Œ,�,¯,�,ā,a,ŵ,w,Â,�,Ã,�,н,H,ˇ,',¸,�,̣,$chr(44),ط,b,Ó,�,Й,N,«,�,ù,�,Ø,�,ê,�)
+  %r = $replace(%r,ا,I,л,n,ы,bl,б,6,ש,w,―,-,Ϊ,I,,`,ŭ,u,ổ,o,Ǿ,�,ẫ,a,ầ,a,,q,Ẃ,W,Ĥ,H,ỏ,o,−,-,,^,ล,a,Ĝ,G,ﺯ,j,ى,s,Ѓ,r,ứ,u,●,�,ύ,u,,0,,7,,",ө,O,ǐ,i,Ǒ,O,Ơ,O,,2,ү,y,,v,А,A,≤,<,≥,>,ẩ,a,,H,٤,e,ﺂ,i,Ќ,K,Ū,U,,;,ă,a,ĸ,k,Ć,C,Ĭ,I,ň,n,Ĩ,I,Ι,I,Ϋ,Y,,J,,X,,$chr(125),,$chr(123),Ξ,E,ˆ,^,,V,,L,γ,y,ﺎ,i,Ώ,o,ỳ,y,Ć,C,Ĭ,I,ĸ,k,Ŷ,y,๛,c,ỡ,o,๓,m,ﺄ,i,פֿ,G,Ŭ,U,Ē,E,Ă,A,÷,�, ,�,‚,�,„,�,ˆ,�,‰,�,ă,a,,x,,=,ق,J,,?,￼,-,◊,o,т,T,Ā,A,קּ,P,Ė,E,Ę,E,ο,o,ϋ,u,‼,!!,ט,u,ﮒ,S,Ч,y,Ґ,r,ě,e,Ę,E,ĺ,I,Λ,a,ο,o,Ú,�,Ř,R,Ư,U,œ,�,,-,—,�,ห,n,ส,a,ฐ,s,Ψ,Y,Ẫ,A,π,n,Ņ,N,�!,o,Ћ,h,ợ,o,ĉ,c,◦,�,ﮎ,S,Ų,U,Е,E,Ѕ,S,۵,o,ي,S,ب,u,ة,o,ئ,s,ļ,l,ı,i,ŗ,r,ж,x,΅,",ώ,w,▪,�,ζ,l,Щ,W,฿,B,ỹ,y,ϊ,i,ť,t,п,n,´,�,ک,s,ﱢ,*,ξ,E,ќ,k,√,v,τ,t,Ð,�,£,�,ñ,�,¥,�,ë,�,å,�,,Y,ǎ,a)
+  %r = $replace(%r,ằ,a, ,�,Ο,O,₪,n,Ậ,A,,�,,�,,�,,�,,�,,�,ờ,o,‍,�,ֱ,�,־,-,הּ,n,ź,z,‌,�,ُ,',๘,c,ฅ,m,,�,,<,▼,v,ﻜ,S,℮,e,ź,z,ậ,a,๑,a,ﬁ,fi,ь,b,ﺒ,.,ﺜ,:,ศ,a,ภ,n,๏,o,ะ,=,צּ,y,ซ,i,‾,�,∂,a,：,:,≠,=,,+,م,r,ồ,o,Ử,U,Л,N,Ӓ,A,Ọ,O,Ẅ,W,Ỵ,Y,ﺚ,u,ﺬ,i,ﺏ,u,Ż,Z,ﮕ,S,ﺳ,w,ﯽ,u,ﺱ,uw,ﻚ,J,ﺔ,a,,!,ễ,e,ل,J,ر,j,ـ,_,ό,o,₫,d,№,no,ữ,u,Ě,E,φ,o,ﻠ,I,ц,u,,A,,N,Њ,H,Έ,E,,~,,U,ạ,a,,1,,4,,3,ỉ,i,Ε,E,Џ,U,ك,J,★,*,,b,,$chr(35),,$,○,o,ю,10,ỵ,y,ẁ,w,қ,k,ٿ,u,♂,o,תּ,n,٥,o,ﮐ,S,ⁿ,n,ﻗ,9,,b,,$chr(35),,$,○,o,ю,10,ị,i,Α,A, ,�,ﻩ,o,ﻍ,E,ن,u,ẽ,e,ث,u,ㅓ,t,ӛ,e,Ә,E,ﻘ,o,۷,v,שׁ,w,ụ,u,Ŏ,O,,�,ự,u,Ｊ,J,ｅ,e,ａ,a,Ｎ,N,（,$chr(40),＠,@,｀,`,．,.,′,',）,$chr(41),▬,-,◄,<,►,>,∑,E,ֻ,$chr(44),‬,|,‎,|,‪,|,‫,|,Ộ,O,И,N,,W,,z)
+  %r = $replace(%r,ס,o,╳,X,٠,�,Ғ,F,υ,u,‏,�,ּ,�,ǔ,u,ผ,w,Ằ,A,Ấ,A,»,�,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,ﮔ,S, Ҝ,K,♦,�,‗,_,ﻈ,b,ฬ,w,אּ,x,,-,ข,u,ท,n,Ờ,O,Ặ,A,ử,u,Ễ,E,ਹ,J, ه,o,■,�,ơ,o,,,ң,h,Қ,K,Ҳ,X,ҳ,x,Ҝ,K,ع,E,چ,c,ч,y,Х,X,٦,7,ֽ,.,َ,',ֿ,',׃,:,ọ,o,Җ,X,ی,s,ฬ,w,∙,�,Τ,T,ⓒ,c,ⓐ,a,ⓟ,p,ⓔ,e,ⓣ,t,Ǎ,A,Х,X,ֳ,.,ی,s,Ỉ,I,̉,',,Z,ọ,o,ẹ,e,ҝ,k,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,Қ,K,,Z,̕,',├,|,┤,|,أ,I,,,א,x,ặ,a,ǒ,o,Ờ,O,☼,�,ׁ,.,,Z,ฤ,n,⑷,4,⑵,2,⒪,0,เ,i)
+  return %r
+}
+
+alias -l matchlist {
+  ;ial,level
+  if ($IsGlobal($1) == true) {
+    if ($getglev($1) == $3) { return yes }
+  }
+  else {
+    if ($getllev($1,$2) == $3) { return yes }
+  }
+}
+
+menu nicklist {
+  -
+  Userlist
+  . $+ $iif($IsOnUserList($ial($snick(#,1)).addr,$active) == True,Properties,$null)
+  ..Local
+  ... $+ $iif($IsHalted($active,$ial($snick(#,1)).addr) == True,$style(1),$null) $+ Halted:{ 
+    if ($IsHalted($active,$ial($snick(#,1)).addr) == False) { enablehalt $active $ial($snick(#,1)).addr }
+    else { disablehalt $active $ial($snick(#,1)).addr) }
+  }
+  ...Remove:{ RemGlobalUser $ial($snick(#,1)).addr | RemLocalUser $active $ial($snick(#,1)).addr }
+  ..Global
+  ...Comment:{ $iif($IsGlobal($ial($snick(#,1)).addr) == true,$AltComment(Global,$ial($snick(#,1)).addr,$$?"Please enter in a comment."),$AltComment($active,$ial($snick(#,1)).addr,$$?"Please enter in a comment.")) | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  .Levels
+  ..Global
+  ...Add
+  ....Owner:{ AddGlobalUser $ial($snick(#,1)).addr q | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Host:{ AddGlobalUser $ial($snick(#,1)).addr o | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Voice:{ AddGlobalUser $ial($snick(#,1)).addr v | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Kick:{ AddGlobalUser $ial($snick(#,1)).addr k | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Banlist:{ AddGlobalUser $ial($snick(#,1)).addr b | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ...Remove:{ RemGlobalUser $ial($snick(#,1)).addr }
+  ..Local
+  ...Add
+  ....Owner:{ AddLocalUser $active $ial($snick(#,1)).addr q | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Host:{ AddLocalUser $active $ial($snick(#,1)).addr o | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Voice:{ AddLocalUser $active $ial($snick(#,1)).addr v | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Kick:{ AddLocalUser $active $ial($snick(#,1)).addr k | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ....Banlist:{ AddLocalUser $active $ial($snick(#,1)).addr b | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ...Remove:{ RemLocalUser $active $ial($snick(#,1)).addr }
+  . $+ $iif($len($replace($remove($matchChan(#),$+($chr(37),$chr(35))),\b,$chr(32))) > 30,$mid($replace($remove($matchChan(#),$+($chr(37),$chr(35))),\b,$chr(32)),1,30) $+ ...,$replace($remove($matchChan(#),$+($chr(37),$chr(35))),\b,$chr(32)))
+  ..Add
+  ...Owner:{ AddLocalUser $matchChan(#) $ial($snick(#,1)).addr q | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ...Host:{ AddLocalUser $matchChan(#) $ial($snick(#,1)).addr o | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ...Voice:{ AddLocalUser $matchChan(#) $ial($snick(#,1)).addr v | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ...Kick:{ AddLocalUser $matchChan(#) $ial($snick(#,1)).addr k | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ...Banlist:{ AddLocalUser $matchChan(#) $ial($snick(#,1)).addr b | AddMatchNick $ial($snick(#,1)).addr $snick(#,1) }
+  ..Remove:{ RemLocalUser $matchChan(#) $ial($snick(#,1)).addr }
+  .Control
+  ..QuickAdd
+  ...$submenu($quickaddlist($1))
+  ..Main:{ ShowUserList }
+  .. $+ $iif($group(#CommonComment) == on,$style(1),$null) $+ DupeComments:{ $iif($group(#CommonComment) == on,.disable #CommonComment,.enable #CommonComment) }
+  .Channel Users
+  ..$submenu($getulistchans($1))
+  . $+ $iif($ishalted(#,#) == true,$style(1),$null) $+ HaltChan:{ $iif($ishalted(#,#) == true,ResumeChannel,HaltChannel) # }
+}
+
+alias -l quickaddlist {
+  if ($1 == begin) { return - }
+  if ($1 <= $ini(Userlist.ini,0)) { return $replace($remove($ini(Userlist.ini,$1),$chr(37)),Global,,Names,,Wildcard,) $+ : $+ ShowQuickAdd $remove($ini(Userlist.ini,$1),$chr(37)) }
+  if ($1 == end) { return - }
+}
+
+alias -l getulistchans {
+  if ($1 == begin) { return - }
+  if ($1 <= $ini(Userlist.ini,$active,0)) { return $ial(*! $+ $ini(Userlist.ini,$active,$1)).nick $+ :RemLocalUser $active $ini(Userlist.ini,$active,$1) }
+  if ($1 == end) { return - }
+}
+
+dialog Userlist {
+  title "Userlist V2"
+  size -1 -1 215 156
+  option dbu
+  box "Lists", 1, 1 0 213 105
+  list 2, 4 7 206 95, size
+  button "Add New", 3, 1 107 37 11
+  button "Add Channel", 4, 5 140 47 10
+  edit "", 5, 55 140 119 10, autohs limit 9999
+  button "Remove", 6, 39 107 37 11
+  box "", 7, 1 132 178 23
+  combo 8, 1 121 110 36, size drop
+  combo 9, 78 107 136 47, size drop
+  check "Halted", 10, 184 138 31 13
+  combo 11, 112 121 102 35, size drop
+}
+
+dialog AddUser {
+  title "Add New User"
+  size -1 -1 130 87
+  option dbu
+  box "Entry Details", 1, 1 1 128 85
+  text "Nickname:", 2, 5 11 28 8
+  text "Address:", 3, 5 20 28 8
+  edit "", 4, 33 10 91 10, autohs limit 9999
+  edit "", 5, 33 19 91 10, autohs limit 9999
+  combo 6, 69 57 56 22, size drop
+  edit "", 7, 33 28 91 10, autohs limit 9999
+  text "Comment:", 8, 5 29 28 8
+  button "Add User", 9, 4 70 44 11
+  combo 10, 4 57 56 22, size drop
+  combo 11, 4 42 121 39, size edit drop
+  button "Selected Nicks", 12, 82 70 42 12
+}
+
+dialog QuickAdd {
+  title ""
+  size -1 -1 146 97
+  option dbu
+  list 1, 1 1 144 54, size
+  button "Add", 2, 1 81 51 14, ok
+  button "Cancel", 3, 93 81 52 14, cancel
+  edit "", 4, 1 56 144 10, autohs limit 9999
+  combo 5, 1 69 144 47, size drop
+}
+;room gate level comment AddLocalUser
+
+alias -l encode2decode {
+  var %i = 1
+  while (%i <= $nick($active,0)) {
+    if ($1 == $msn.decode($nick($active,%i))) {
+      return $nick($active,%i)
+    }
+    inc %i
+  }
+}
+
+on *:dialog:QuickAdd:sclick:2:{
+  var %gate = $ial($encode2decode($did($dname,1).seltext)).addr
+  var %room = $dialog($dname).title
+  var %level = $word2mode($did($dname,5).text)
+  var %comment = $did($dname,4)
+  addlocaluser $chr(37) $+ $remove(%room,$chr(37)) %gate %level %comment
+  echo -a Adding $encode2decode($did($dname,1).seltext) aka $did($dname,1).seltext to userlist $chr(37) $+ $remove(%room,$chr(37)) %gate $did($dname,5).text %comment
+}
+
+on *:dialog:QuickAdd:init:*:{
+  dialog -t $dname %quickadd
+  dolevels
+  dolists
+}
+
+alias dolevels {
+  if ($dialog(QuickAdd)) {
+    did -a QuickAdd 5 Owner
+    did -a QuickAdd 5 Host
+    did -a QuickAdd 5 Voice
+    did -a QuickAdd 5 Kick
+    did -a QuickAdd 5 Banlist
+    did -c QuickAdd 5 1
+  }
+}
+
+alias dolists {
+  if ($dialog(QuickAdd)) {
+    var %i = 1
+    while (%i <= $nick($active,0)) {
+      did -a QuickAdd 1 $msn.decode($nick($active,%i))
+      inc %i
+    }
+  }
+}
+
+on *:dialog:Userlist:init:*:{
+  addlevels
+  addtype
+  addchans
+  RefreshList
+  if ($readini(Userlist.ini,Global,Halted) == True) { dialog -t $dname Userlist V2 - Warning! Global Halt is Enabled. }
+}
+
+on *:dialog:AddUser:init:*:{
+  adduserlev
+  addscope
+  adduchans
+}
+
+on *:dialog:AddUser:sclick:12:{
+  did -r $dname 4
+  did -r $dname 5
+  did -a $dname 4 $gettok($snick($active,1),1,44)
+  did -a $dname 5 $ial($snick($active,1)).addr
+}
+
+alias f12 {
+  AddGlobalUser $$ial($snicks).addr $word2mode(BANLIST) $snicks
+}
+
+on *:dialog:AddUser:sclick:9:{
+  ;check
+  if ($gettok($did($dname,5),2,64) != GateKeeperPassport) { $input(Invalid Gate.,$ok) | halt }
+  if (! isin $did($dname,5)) { $input(Please declude the Nickname.,$ok) | halt }
+  if ($did($dname,10).text == Global) {
+    AddMatchNick $did($dname,5) $did($dname,4)
+    AddGlobalUser $did($dname,5) $word2mode($did($dname,6).text) $iif($did($dname,7) == $null,No Reason.,$did($dname,7))
+  }
+  elseif ($did($dname,10).text == Local) {
+    AddMatchNick $did($dname,5) $did($dname,4)
+    ;chan=11 type=10
+    AddLocalUser $did($dname,11).text $did($dname,5) $word2mode($did($dname,6).text) $iif($did($dname,7) == $null,No Reason.,$did($dname,7))
+  }
+  dialog -x AddUser
+  addchans
+}
+
+on *:dialog:AddUser:sclick:10:{
+  if ($did($dname,10).text == Global) {
+    did -b $dname 11
+  }
+  elseif ($did($dname,10).text == Local) {
+    did -e $dname 11    
+  }
+}
+
+on *:dialog:Userlist:sclick:3:{
+  ShowAddUser
+}
+
+on *:dialog:Userlist:sclick:9:{
+  refreshlist
+  did -ra $dname 5 $matchWChan($did($dname,9).text)
+}
+
+on *:dialog:Userlist:sclick:8:{
+  if ($did($dname,8).text == Global) {
+    did -b $dname 9 
+    did -b $dname 5 
+    did -b $dname 4
+    refreshlist
+    did -r $dname 5
+  }
+  elseif ($did($dname,8).text == Local) {
+    did -e $dname 9
+    did -e $dname 5 
+    did -e $dname 4
+    refreshlist
+  }
+}
+
+on *:dialog:Userlist:sclick:4:{
+  if ($did($dname,4).state == 1) && ($did($dname,5).text != $null) && ($readini(userlist.ini,$did($dname,5).text) == $null) {
+    writeini userlist.ini $did($dname,5).text Halted False
+    addchans
+  }
+}
+
+on *:dialog:Userlist:edit:5:{
+  if ($did($dname,5).text == $null) {
+    did -b $dname 4
+  }
+  elseif ($did($dname,5).text != $null) {
+    did -e $dname 4
+  }
+}
+alias IsHalted {
+  ;Format= <Channel> Gate
+  if ($1 == Global)  {
+    if ($readini(Userlist.ini,Global,Halted) == True) && ($2 == Global) { return True }
+    elseif ($readini(Userlist.ini,Global,Halted) == False) && ($2 == Global) { return False }
+    elseif ($gettok($readini(Userlist.ini,Global,$2),2,44) == False) { return False }
+    elseif ($gettok($readini(Userlist.ini,Global,$2),2,44) == True) { return True }
+  }
+  else {
+    if ($gettok($readini(Userlist.ini,$1,$2),2,44) == False) { return False }
+    elseif ($gettok($readini(Userlist.ini,$1,$2),2,44) == True) { return True }
+    elseif ($readini(Userlist.ini,$1,Halted) == True) && ($2 == $1) { return True }
+    elseif ($readini(Userlist.ini,$1,Halted) == False) && ($2 == $1) { return False }
+  }
+}
+
+on *:dialog:Userlist:sclick:2:{ 
+  if ($did($dname,8).text == Global) {
+    if ($ishalted(Global,$gettok($did(Userlist,2).seltext,1,32)) == True) {
+      did -c $dname 10
+    }
+    else {
+      did -u $dname 10
+    }
+  }
+  elseif ($did($dname,8).text == Local) {
+    if ($ishalted($did(Userlist,9).seltext,$gettok($did(Userlist,2).seltext,1,32)) == True) {
+      did -c $dname 10
+    }
+    else {
+      did -u $dname 10
+    }
+  }
+}
+
+on *:dialog:Userlist:sclick:11:{
+  RefreshList
+}
+
+on *:dialog:Userlist:dclick:2:{
+  clipboard $did($dname,2).seltext
+}
+
+
+
+on *:dialog:Userlist:sclick:6:{
+  if ($did(Userlist,2).seltext == $null) || ($did(Userlist,2).seltext == -) { $input(Please Select an item.,$ok) | halt }
+  var %yn = $input(Are you sure?,8)
+  if (%yn == $true) {
+    if ($did(Userlist,9).enabled == $true) {
+      DoRemove $did(Userlist,9).seltext $gettok($did(Userlist,2).seltext,1,32)
+    }
+    elseif ($did(Userlist,9).enabled == $false) {
+      DoRemove Global $gettok($did(Userlist,2).seltext,1,32)
+    }
+    addchans
+  }
+}
+
+on *:dialog:Userlist:sclick:10:{
+
+  ;if ($readini(Userlist.ini,Global,Halted) == True) { writeini -n Userlist.ini Global Halted False | did -u $dname 10 | did -e $dname 2 | halt }
+  if ($readini(Userlist.ini,Global,Halted) == True) && ($gettok($did(Userlist,2).seltext,1,32) == Global) { dialog -t $dname Userlist V2 }
+  elseif ($readini(Userlist.ini,Global,Halted) == False) && ($gettok($did(Userlist,2).seltext,1,32) == Global) { dialog -t $dname Userlist V2 - Warning! Global Halt is Enabled. }
+
+  if ($did(Userlist,2).seltext == $null) || ($did(Userlist,2).seltext == -) { did -u $dname 10 | $input(Please Select a User,$ok) | halt }
+
+
+  ;if ($readini(Userlist.ini,Global,Halted) == True) {
+  ;  globRESUME
+  ;  did -e $dname 2
+  ;}
+  ;else {
+  ;  globHALT $iif($did(Userlist,9).enabled == $true,$did(Userlist,9).seltext,$null) $gettok($did(Userlist,2).seltext,1,32)
+  ;}
+
+  if ($did($dname,10).state == 0) { 
+    DisableHalt $iif($did(Userlist,9).enabled == $true,$did(Userlist,9).seltext,$null) $gettok($did(Userlist,2).seltext,1,32)
+  }
+
+  if ($did($dname,10).state == 1) { 
+    EnableHalt $iif($did(Userlist,9).enabled == $true,$did(Userlist,9).seltext,$null) $gettok($did(Userlist,2).seltext,1,32)
+  }
+
+
+}
+
+alias -l addlevels {
+  if ($dialog(Userlist)) { 
+    did -a Userlist 11 OWNER
+    did -a Userlist 11 HOST
+    did -a Userlist 11 VOICE
+    did -a Userlist 11 KICK
+    did -a Userlist 11 BANLIST
+    did -c Userlist 11 1
+  }
+}
+
+alias -l addtype {
+  if ($dialog(Userlist)) { 
+    did -a Userlist 8 Local
+    did -a Userlist 8 Global
+    did -c Userlist 8 1
+  }
+}
+
+alias -l addscope {
+  if ($dialog(AddUser)) { 
+    did -a AddUser 10 Local
+    did -a AddUser 10 Global
+    did -c AddUser 10 1
+  }
+}
+
+alias -l adduserlev {
+  if ($dialog(AddUser)) { 
+    did -a AddUser 6 OWNER
+    did -a AddUser 6 HOST
+    did -a AddUser 6 VOICE
+    did -a AddUser 6 KICK
+    did -a AddUser 6 BANLIST
+    did -c AddUser 6 1
+  }
+}
+
+alias -l adduchans {
+  if ($dialog(AddUser)) {
+    var %i = 1
+    while (%i <= $ini(Userlist.ini,0)) {
+      if ($ini(Userlist.ini,%i) != Global) && ($ini(Userlist.ini,%i) != WildCard) && ($ini(Userlist.ini,%i) != Names) {
+        did -a AddUser 11 $ini(Userlist.ini,%i)
+      }
+      inc %i
+    }
+    did -c AddUser 11 1
+    refreshlist
+  }
+}
+
+alias -l addchans {
+  if ($dialog(Userlist)) { 
+    did -r Userlist 9
+    var %i = 1
+    while (%i <= $ini(Userlist.ini,0)) {
+      if ($ini(Userlist.ini,%i) != Global) && ($ini(Userlist.ini,%i) != WildCard) && ($ini(Userlist.ini,%i) != Names) {
+        did -a Userlist 9 $ini(Userlist.ini,%i)
+      }
+      inc %i
+    }
+    did -c Userlist 9 1
+    refreshlist
+  }
+}
+
+alias ShowQuickAdd { 
+  if ($dialog(QuickAdd)) { dialog -v QuickAdd | halt }
+  set -u1 %quickadd $chr(37) $+ $1
+  dialog -m QuickAdd QuickAdd
+}
+
+alias ShowUserlist { 
+  if ($dialog(Userlist)) { dialog -v Userlist | halt }
+  dialog -m Userlist Userlist 
+}
+
+alias ShowAddUser { 
+  if ($dialog(AddUser)) { dialog -v AddUser | halt }
+  dialog -m AddUser AddUser
+}
+
+alias word2mode {
+  if ($1 == OWNER) { return q }
+  if ($1 == HOST) { return o }
+  if ($1 == VOICE) { return v }
+  if ($1 == KICK) { return k }
+  if ($1 == BANLIST) { return b }
+}
+
+alias mode2word {
+  if ($1 == q) { return OWNER }
+  if ($1 == o) { return HOST }
+  if ($1 == v) { return VOICE }
+  if ($1 == k) { return KICK }
+  if ($1 == b) { return BANLIST }
+}
+
+alias RefreshList {
+  if ($dialog(Userlist)) { 
+    did -r Userlist 2
+    if ($did(Userlist,8).text == Local) {
+      did -a Userlist 2 $did(Userlist,9)
+      did -a Userlist 2 -
+      var %i = 1
+      while (%i <= $ini(Userlist.ini,$did(Userlist,9),0)) {
+        if ($gettok($readini(Userlist.ini,$did(Userlist,9),$ini(Userlist.ini,$did(Userlist,9),%i)),1,44) == $word2mode($did(Userlist,11))) {
+          did -a Userlist 2 $ini(Userlist.ini,$did(Userlist,9),%i) $msn.decode($readini(Userlist.ini,Names,$ini(Userlist.ini,$did(Userlist,9),%i)))) $gettok($readini(Userlist.ini,$did(Userlist,9),$ini(Userlist.ini,$did(Userlist,9),%i)),3,44)
+        }
+        inc %i
+      }
+
+    }
+    else { 
+      did -a Userlist 2 Global
+      did -a Userlist 2 -
+      var %i = 1
+      while (%i <= $ini(Userlist.ini,Global,0)) {
+        if ($gettok($readini(Userlist.ini,Global,$ini(Userlist.ini,Global,%i)),1,44) == $word2mode($did(Userlist,11))) {
+          did -a Userlist 2 $ini(Userlist.ini,Global,%i) $msn.decode($readini(Userlist.ini,Names,$ini(Userlist.ini,Global,%i)))) $gettok($readini(Userlist.ini,Global,$ini(Userlist.ini,Global,%i)),3,44)
+        }
+        inc %i
+      }
+    }
+    if ($matchChan($remove($did(Userlist,9),$chr(37)))) {
+      did -e Userlist 4
+      did -c Userlist 4
+      did -ra Userlist 5 $MchWildCard($remove($did(Userlist,9),$chr(37)))
+    }
+    elseif ($matchChan($remove($did(Userlist,9),$chr(37))) == $null) {
+      did -u Userlist 4
+      did -b Userlist 4
+      did -r Userlist 5
+    }
+  }
+
+}

@@ -1,0 +1,245 @@
+;Main IP Crack functions
+
+alias ip_crack {
+  unset %octet*
+  unset %aoctet. [ $+ [ $1 ] ]
+  unset %tryknock. [ $+ [ $1 ] ]
+  unset %ip.crack. [ $+ [ $1 ] ]
+  unset %aoctet.number. [ $+ [ $1 ] ]
+  set -u360 %ip.crack. [ $+ [ $$1 ] ] true
+  set %aoctet. [ $+ [ $$1 ] ] 1
+  if (u !isin $chan($$1).mode) { mode $$1 +u }
+  echo $1 IP Cracker has initiated for $1
+  ip_try_next_octet $1
+}
+alias ip_crack_check return %ip.crack. [ $+ [ $1 ] ]
+
+
+;IP Crack Checking/Getting functions
+
+alias ip_is_knock return %tryknock. [ $+ [ $1 ] ]
+alias ip_crack_check return %ip.crack. [ $+ [ $1 ] ]
+alias active_octet return %aoctet. [ $+ [ $1 ] ]
+alias ip_format {
+  ;Format = Nick
+  var %a = %octet1.1. [ $+ [ $1 ] ] $+ %octet1.2. [ $+ [ $1 ] ] $+ %octet1.3. [ $+ [ $1 ] ] $+ *
+  var %b = %octet2.1. [ $+ [ $1 ] ] $+ %octet2.2. [ $+ [ $1 ] ] $+ %octet2.3. [ $+ [ $1 ] ] $+ *
+  var %c = %octet3.1. [ $+ [ $1 ] ] $+ %octet3.2. [ $+ [ $1 ] ] $+ %octet3.3. [ $+ [ $1 ] ] $+ *
+  var %d = %octet4.1. [ $+ [ $1 ] ] $+ %octet4.2. [ $+ [ $1 ] ] $+ %octet4.3. [ $+ [ $1 ] ] $+ *
+  var %ip = $+(%a,.,%b,.,%c,.,%d)
+  %ip = $remove(%ip,x)
+  return %ip
+}
+alias pure_ip {
+  ;Format = Nick
+  var %a = %octet1.1. [ $+ [ $1 ] ] $+ %octet1.2. [ $+ [ $1 ] ] $+ %octet1.3. [ $+ [ $1 ] ]
+  var %b = %octet2.1. [ $+ [ $1 ] ] $+ %octet2.2. [ $+ [ $1 ] ] $+ %octet2.3. [ $+ [ $1 ] ]
+  var %c = %octet3.1. [ $+ [ $1 ] ] $+ %octet3.2. [ $+ [ $1 ] ] $+ %octet3.3. [ $+ [ $1 ] ]
+  var %d = %octet4.1. [ $+ [ $1 ] ] $+ %octet4.2. [ $+ [ $1 ] ] $+ %octet4.3. [ $+ [ $1 ] ]
+  var %ip = $+(%a,*.,%b,*.,%c,*.,%d) ( $+ $+(%a,.,%b,.,%c,.,%d) $+ )
+  %ip = $remove(%ip,x)
+  return %ip
+}
+alias real_ip {
+  ;Format = Nick
+  var %a = %octet1.1. [ $+ [ $1 ] ] $+ %octet1.2. [ $+ [ $1 ] ] $+ %octet1.3. [ $+ [ $1 ] ]
+  var %b = %octet2.1. [ $+ [ $1 ] ] $+ %octet2.2. [ $+ [ $1 ] ] $+ %octet2.3. [ $+ [ $1 ] ]
+  var %c = %octet3.1. [ $+ [ $1 ] ] $+ %octet3.2. [ $+ [ $1 ] ] $+ %octet3.3. [ $+ [ $1 ] ]
+  var %d = %octet4.1. [ $+ [ $1 ] ] $+ %octet4.2. [ $+ [ $1 ] ] $+ %octet4.3. [ $+ [ $1 ] ]
+  var %ip = $+(%a,.,%b,.,%c,.,%d)
+  %ip = $remove(%ip,x)
+  return %ip
+}
+alias ip_get_octet {
+  var %oct = %octet [ $+ [ $1 ] ] [ $+ [ .1. ] ] [ $+ [ $2 ] ] $+ $& 
+    %octet [ $+ [ $1 ] ] [ $+ [ .2. ] ] [ $+ [ $2 ] ] $+ $& 
+    %octet [ $+ [ $1 ] ] [ $+ [ .3. ] ] [ $+ [ $2 ] ]
+  %oct = $remove(%oct,x)
+  return %oct
+}
+
+
+;IP Functions
+
+alias increment_active_octet inc %aoctet. [ $+ [ $1 ] ]
+alias increment_active_octet_number inc %aoctet.number. [ $+ [ $1 ] ]
+alias increment_octet {
+  ;OCTET %aoctet. [ $+ [ $1 ] ]
+  ;OCTET NUMBER %aoctet.number. [ $+ [ $1 ] ]
+
+  var %a = %aoctet. [ $+ [ $1 ] ]
+  var %ao = %aoctet.number. [ $+ [ $1 ] ]
+
+  if (%octet [ $+ [ %a ] ] [ $+ [ . ] ] [ $+ [ %ao ] ] [ $+ [ . ] ] [ $+ [ $1 ] ] == 9) { 
+    if (%a < 4) {
+      ip_failed_to_resolve $1
+      halt
+    }
+    else {
+      oct_x $1 %a %ao
+      stop_ip_crack $1 1
+      halt 
+    }
+  }
+  elseif (%octet [ $+ [ %a ] ] [ $+ [ . ] ] [ $+ [ %ao ] ] [ $+ [ . ] ] [ $+ [ $1 ] ] == $null) {
+    set %octet [ $+ [ %a ] ] [ $+ [ . ] ] [ $+ [ %ao ] ] [ $+ [ . ] ] [ $+ [ $1 ] ] 0
+  }
+  else { inc %octet [ $+ [ %a ] ] [ $+ [ . ] ] [ $+ [ %ao ] ] [ $+ [ . ] ] [ $+ [ $1 ] ] }
+
+  echo $1 Attempting to check IP: $ip_format($1)
+  if (($me isowner $1) || ($me isop $1)) {
+    access $1 clear grant $+ $lf $+ access $1 add grant $ip_format($1) 5
+  }
+}
+
+
+alias ip_failed_to_resolve { 
+  echo $1 The IP Cracker has failed to resolve the flooder due to random IP's.
+  stop_ip_crack $1 0
+}
+alias GetOctets {
+  var %i = 1, %ip
+  while (%i <= $$1) {
+    %ip = %ip %+ $ip_get_octet(%i,$2)) $+ .
+  }
+  %ip = $left(%ip,-2) $+ *
+  return %ip
+}
+alias stop_ip_crack {
+  if ($2 == 1) var %ipdata = IP Cracker has successfully obtained the IP: $pure_ip($1)
+  else var %ipdata = IP Cracker has failed with the stored IP: $pure_ip($1)
+
+  echo $1 %ipdata
+
+  write ips.txt $date $time # %ipdata
+
+  access $1 clear grant
+  if ($me isowner $1) && ($group(#ip_autoprotect) == on) && (%auto.check. [ $+ [ $1 ] ] == true) {
+    unset %auto.check. [ $+ [ $1 ] ]
+    if ($2 == 1) { access $1 add deny $real_ip($1) 0 :Auto Protection has banned for flooding. }
+    else { access $1 add deny $$GetOctets($active_octet($1),$1) 0 :Auto Protection has banned for flooding. }
+    mode $1 -u
+  }
+
+  unset %octet*
+  unset %aoctet. [ $+ [ $1 ] ]
+  unset %tryknock. [ $+ [ $1 ] ]
+  unset %ip.crack. [ $+ [ $1 ] ]
+  unset %aoctet.number. [ $+ [ $1 ] ]
+}
+
+
+alias ip_unset_knock unset %tryknock. [ $+ [ $1 ] ]
+
+alias oct_x {
+  set %octet [ $+ [ $2 ] ] [ $+ [ . ] ] [ $+ [ $3 ] ] [ $+ [ . ] ] [ $+ [ $1 ] ] x
+}
+
+alias ip_try_next_octet {
+  var %ipoct = $ip_get_octet($active_octet($1),$1))
+  var %octet_length = $len(%ipoct)
+  if (%octet_length == 0) {
+    increment_active_octet_number $1
+    increment_octet $1
+    halt
+  }
+  elseif (%octet_length == 1) {
+    increment_active_octet_number $1
+    increment_octet $1
+    halt
+  }
+  elseif (%octet_length == 2) {
+    if ($left(%ipoct,1) > 2) {
+      oct_x $1 $active_octet($1) 3
+      increment_active_octet $1
+      set %aoctet.number. [ $+ [ $1 ] ] 1
+      increment_octet $1
+      halt
+    }
+    else {  
+      increment_active_octet_number $1
+      increment_octet $1
+      halt
+    }
+  }
+  elseif (%octet_length == 3) {
+    if ($active_octet($1) == 4) {
+      stop_ip_crack $1 1
+      halt
+    }
+    else {
+      increment_active_octet $1
+      set %aoctet.number. [ $+ [ $1 ] ] 1
+      increment_octet $1
+      halt
+    }
+  }
+
+  echo $1 Attempting to check IP: $ip_format
+  if (($me isowner $1) || ($me isop $1)) {
+    access $1 clear grant $+ $lf $+ access $1 add grant $ip_format($1) 5
+  }
+}
+
+
+;:tk2chatchata01 801 Sky[R3] %#!!!!!!!!!!!!!!!!!!!!!!Revolution!!!!!!!!!!!!!!!!!!!!!! GRANT forgotten!*@*$* 0 6A638B18FC607E1A@GateKeeperPassport :
+
+raw 801:*:{
+  ;NICK %#CHAN GRANT <MASK> <DURATION> <MASK>
+  set %tryknock. [ $+ [ $2 ] ] true
+  if (%tobekicked. [ $+ [ $2 ] ] != $null) { kick $2 %tobekicked. [ $+ [ $2 ] ] | unset %tobekicked. [ $+ [ $2 ] ] }
+}
+
+;:MASK KNOCK %#CHAN 913
+
+raw KNOCK:*:{
+  ;%#CHAN 913
+  if ($2 == 473) && ($ip_crack_check($1) == true) && ($ip_is_knock($1) == true) {
+    unset %tryknock. [ $+ [ $1 ] ]
+    ip_try_next_octet $1 
+  }
+  elseif ($ip_crack_check($1) == true) && ($ip_is_knock($1) == true) {
+    unset %tryknock. [ $+ [ $1 ] ]
+    increment_octet $1
+  }
+}
+
+on *:JOIN:#:{
+  if ($ip_crack_check(#) == true) && ($ip_is_knock(#) == true) {
+    unset %tryknock. [ $+ [ # ] ]
+    set %tobekicked. [ $+ [ # ] ] $nick
+    ip_try_next_octet #   
+  }
+  if ($ip_crack_check(#) != true) && ($group(#ip_autoprotect) == on) {
+    inc -u3 %start.crack. [ $+ [ # ] ]
+    if (%start.crack. [ $+ [ # ] ] == 10) {
+      unset %octet*
+      unset %aoctet. [ $+ [ # ] ]
+      unset %tryknock. [ $+ [ # ] ]
+      unset %ip.crack. [ $+ [ # ] ]
+      unset %aoctet.number. [ $+ [ # ] ]
+      set -u360 %auto.check. [ $+ [ # ] ] true
+      set -u360 %ip.crack. [ $+ [ # ] ] true
+      set %aoctet. [ $+ [ # ] ] 1
+      if (u !isin $chan(#).mode) { mode # +u }
+      echo # IP Cracker Autoprotect has initiated for #
+      ip_try_next_octet #
+    }
+  }
+}
+
+#ip_autoprotect off
+#ip_autoprotect end
+
+menu channel {
+  Flood IP-Cracker
+  .Initiate:{ ip_crack # }
+  .Stop:{ stop_ip_crack # 0 }
+  .-
+  . $+ $iif($group(#ip_autoprotect) == on,$style(1)) $+ Auto Protect $+ :{ $iif($group(#ip_autoprotect) == on,.disable #ip_autoprotect,.enable #ip_autoprotect) }
+  .-
+  .View Log:{ 
+    if ($exists(ips.txt)) run ips.txt
+    else nothing $input(No log file.,$ok)
+  }
+}

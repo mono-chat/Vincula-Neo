@@ -1,0 +1,825 @@
+;######Dream - Splitbot coded by Sky######
+
+;Protection by Sky
+
+alias addProtection {
+  writeini -n Protection.ini Nickname $1 True
+  writeini -n Protection.ini Address $hget(Address,$1) True
+}
+
+alias remProtection {
+  remini Protection.ini Nickname $1
+  remini Protection.ini Address $hget(Address,$1)
+}
+
+alias addProtectionHalt {
+  writeini -n Protection.ini Halt $hget(Address,$1) $1
+}
+
+alias remProtectionHalt {
+  remini Protection.ini Halt $hget(Address,$1)
+}
+
+menu status {
+  .Protection
+  ..Add:{ addProtection $$?"Please enter in the nickname you wish to protect." }
+  ..Halt:{ addProtectionHalt $$?"Please enter in the nickname you wish to protect." }
+  ..Remove
+  ...$submenu($getProtection($1))
+  ..RemoveHalt
+  ...$submenu($getHaltProtection($1))
+}
+alias getProtection {
+  if ($1 == begin) { return - }
+  if ($1 <= $ini(Protection.ini,Nickname,0)) { return $ini(Protection.ini,Nickname,$1) $+ : $+ remProtection $ini(Protection.ini,Nickname,$1) }
+  if ($1 == end) { return - }
+}
+alias getHaltProtection {
+  if ($1 == begin) { return - }
+  if ($1 <= $ini(Protection.ini,Halt,0)) { return $readini(Protection.ini,Halt,$ini(Protection.ini,Halt,$1)) $+ : $+ remProtectionHalt $ini(Protection.ini,Halt,$1) }
+  if ($1 == end) { return - }
+}
+
+alias -l msn.decode {
+  var %r, %l 1
+  %r = $replace($1-,,B,,-,�>,-,,-,,-,,E,,C,,A,,R,,K,,y,ﺘ,i,ﺉ,s,דּ,t,טּ,u,ﻉ,e,,k,,F,,u,,g,Χ,X,,>,,$chr(37),,8,,d,,m,,h,ﻛ,s,,G,,M,,l,,s,,_,,T,,r,,a,,n,,c,,e,,N,,a,,t,,i,,o,,n,,f,,w,,\,,|,,@,,P,,D,,',,�,,$chr(40),,$chr(41),,*,,:,,[,,],,p,,.)
+  %r = $replace(%r,χ,X,ņ,n,Ω,n,��,y,р,p,Р,P,ř,r,х,x,Į,I,Ļ,L,Ф,o,Ĉ,C,ŏ,o,ũ,u,ń,n,Ģ,G,ŕ,r,ś,s,ķ,k,Ŗ,R,ז,i,ε,e,ק,r,ћ,h,м,m,،,�,ī,i,‘,�,’,�,۱,',ē,e,¢,�,,S,•,�,,O,,I,Ά,A,ъ,b,��,T,Φ,o,Ђ,b,я,r,Ё,E,д,A,К,K,Ď,D,и,n,θ,o,М,M,Ї,I,Т,T,Є,e,Ǻ,A,ö,�,ä,�,–,�,·,�,Ö,�,Ü,�,Ë,�,ѕ,s,ą,a,ĭ,i,й,n,в,b,о,o,ш,w,Ğ,G,đ,d,з,e,Ŧ,T,α,a,ğ,g,ú,�,Ŕ,R,Ą,A,ć,c,Đ,�,Κ,K,ў,y,µ,�,Í,�,‹,�,¦,�,Õ,�,Ù,�,À,�,Π,N,ғ,f,ΰ,u,Ŀ,L,ō,o,ς,c,ċ,c,ħ,h,į,i,ŧ,t,Ζ,Z,Þ,�,þ,�,ç,�,á,�,¾,�,ž,�,Ç,�,� $+ $chr(173),-,Á,�,…,�,¨,�,ý,�,ˉ,�,”,�,Û,�,ì,�,ρ,p,έ,e,г,r,à,�,È,�,¼,�,ĵ,j,ã,�,ę,e,ş,s,º,�,Ñ,�,ã,�,Æ,�,˚,�,Я,R,˜,�,Î,�,Ê,�,Ý,�,Ï,�,É,�,‡,�,Ì,�,ª,�,ó,�,™,�,Ò,�,í,�,¿,�,Ä,�,¶,�,ü,�,ƒ,�,ð,�,ò,�,õ,�,¡,�,é,�,ß,�,¤,�,×,�,ô,�,Š,�,ø,�,›,�,â,�,î,�,€,�,š,�,ï,�,ÿ,�,Ń,N,©,�,®,�,û,�,†,�,°,�,§,�,±,�,²,�,è,�)
+  %r = $replace(%r,Ň,N,۰,�,Ĵ,J,І,I,Σ,E,ι,i,Ő,O,δ,o,ץ,y,ν,v,ע,y,מ,n,Ž,�,ő,o,Č,C,ė,e,₤,L,Ō,O,ά,a,Ġ,G,Ω,O,Н,H,ể,e,ẵ,a,Ж,K,ề,e,ế,e,ỗ,o,ū,u,₣,F,∆,a,Ắ,A,ủ,u,Ķ,K,Ť,T,Ş,S,Θ,O,Ш,W,Β,B,П,N,ẅ,w,ﻨ,i,ﯼ,s,џ,u,ђ,h,¹,�,Ỳ,Y,λ,a,С,C,� $+ $chr(173),E,Ű,U,Ī,I,č,c,Ĕ,E,Ŝ,S,Ị,I,ĝ,g,ŀ,l,ї,i,٭,*,ŉ,n,Ħ,H,Д,A,Μ,M,ё,e,Ц,U,э,e,“,�,ф,o,у,y,с,c,к,k,Å,�,Ƥ,P,℞,R,,I,ɳ,n,ʗ,c,▫,�,ѓ,r,ệ,e,ắ,a,ẳ,a,ů,u,Ľ,L,ư,u,·,�,˙,',η,n,ℓ,l,,�,,�,,�,׀,i,ġ,g,Ŵ,W,Δ,A,ﮊ,J,μ,�,Ÿ,�,ĥ,h,β,�,Ь,b,ų,u,є,e,ω,w,Ċ,C,і,i,ł,l,ǿ,o,∫,s,ż,z,ţ,t,æ,�,≈,=,Ł,L,ŋ,n,گ,S,ď,d,ψ,w,σ,o,ģ,g,Ή,H,ΐ,i,ґ,r,κ,k,Ŋ,N,�,\,,/,¬,�,щ,w,ە,o,ם,o,³,�,½,�,İ,I,ľ,l,ĕ,e,Ţ,T,ŝ,s,ŷ,y,ľ,l,ĩ,i,Ô,�,Ś,S,Ĺ,L,а,a,е,e,Ρ,P,Ј,J,Ν,N,ǻ,a,ђ,h,ή,n,ί,l,Œ,�,¯,�,ā,a,ŵ,w,Â,�,Ã,�,н,H,ˇ,',¸,�,̣,$chr(44),ط,b,Ó,�,Й,N,«,�,ù,�,Ø,�,ê,�)
+  %r = $replace(%r,ا,I,л,n,ы,bl,б,6,ש,w,―,-,Ϊ,I,,`,ŭ,u,ổ,o,Ǿ,�,ẫ,a,ầ,a,,q,Ẃ,W,Ĥ,H,ỏ,o,−,-,,^,ล,a,Ĝ,G,ﺯ,j,ى,s,Ѓ,r,ứ,u,●,�,ύ,u,,0,,7,,",ө,O,ǐ,i,Ǒ,O,Ơ,O,,2,ү,y,,v,А,A,≤,<,≥,>,ẩ,a,,H,٤,e,ﺂ,i,Ќ,K,Ū,U,,;,ă,a,ĸ,k,Ć,C,Ĭ,I,ň,n,Ĩ,I,Ι,I,Ϋ,Y,,J,,X,,$chr(125),,$chr(123),Ξ,E,ˆ,^,,V,,L,γ,y,ﺎ,i,Ώ,o,ỳ,y,Ć,C,Ĭ,I,ĸ,k,Ŷ,y,๛,c,ỡ,o,๓,m,ﺄ,i,פֿ,G,Ŭ,U,Ē,E,Ă,A,÷,�, ,�,‚,�,„,�,ˆ,�,‰,�,ă,a,,x,,=,ق,J,,?,￼,-,◊,o,т,T,Ā,A,קּ,P,Ė,E,Ę,E,ο,o,ϋ,u,‼,!!,ט,u,ﮒ,S,Ч,y,Ґ,r,ě,e,Ę,E,ĺ,I,Λ,a,ο,o,Ú,�,Ř,R,Ư,U,œ,�,,-,—,�,ห,n,ส,a,ฐ,s,Ψ,Y,Ẫ,A,π,n,Ņ,N,�!,o,Ћ,h,ợ,o,ĉ,c,◦,�,ﮎ,S,Ų,U,Е,E,Ѕ,S,۵,o,ي,S,ب,u,ة,o,ئ,s,ļ,l,ı,i,ŗ,r,ж,x,΅,",ώ,w,▪,�,ζ,l,Щ,W,฿,B,ỹ,y,ϊ,i,ť,t,п,n,´,�,ک,s,ﱢ,*,ξ,E,ќ,k,√,v,τ,t,Ð,�,£,�,ñ,�,¥,�,ë,�,å,�,,Y,ǎ,a)
+  %r = $replace(%r,ằ,a, ,�,Ο,O,₪,n,Ậ,A,,�,,�,,�,,�,,�,,�,ờ,o,‍,�,ֱ,�,־,-,הּ,n,ź,z,‌,�,ُ,',๘,c,ฅ,m,,�,,<,▼,v,ﻜ,S,℮,e,ź,z,ậ,a,๑,a,ﬁ,fi,ь,b,ﺒ,.,ﺜ,:,ศ,a,ภ,n,๏,o,ะ,=,צּ,y,ซ,i,‾,�,∂,a,：,:,≠,=,,+,م,r,ồ,o,Ử,U,Л,N,Ӓ,A,Ọ,O,Ẅ,W,Ỵ,Y,ﺚ,u,ﺬ,i,ﺏ,u,Ż,Z,ﮕ,S,ﺳ,w,ﯽ,u,ﺱ,uw,ﻚ,J,ﺔ,a,,!,ễ,e,ل,J,ر,j,ـ,_,ό,o,₫,d,№,no,ữ,u,Ě,E,φ,o,ﻠ,I,ц,u,,A,,N,Њ,H,Έ,E,,~,,U,ạ,a,,1,,4,,3,ỉ,i,Ε,E,Џ,U,ك,J,★,*,,b,,$chr(35),,$,○,o,ю,10,ỵ,y,ẁ,w,қ,k,ٿ,u,♂,o,תּ,n,٥,o,ﮐ,S,ⁿ,n,ﻗ,9,,b,,$chr(35),,$,○,o,ю,10,ị,i,Α,A, ,�,ﻩ,o,ﻍ,E,ن,u,ẽ,e,ث,u,ㅓ,t,ӛ,e,Ә,E,ﻘ,o,۷,v,שׁ,w,ụ,u,Ŏ,O,,�,ự,u,Ｊ,J,ｅ,e,ａ,a,Ｎ,N,（,$chr(40),＠,@,｀,`,．,.,′,',）,$chr(41),▬,-,◄,<,►,>,∑,E,ֻ,$chr(44),‬,|,‎,|,‪,|,‫,|,Ộ,O,И,N,,W,,z)
+  %r = $replace(%r,ס,o,╳,X,٠,�,Ғ,F,υ,u,‏,�,ּ,�,ǔ,u,ผ,w,Ằ,A,Ấ,A,»,�,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,ﮔ,S, Ҝ,K,♦,�,‗,_,ﻈ,b,ฬ,w,אּ,x,,-,ข,u,ท,n,Ờ,O,Ặ,A,ử,u,Ễ,E,ਹ,J, ه,o,■,�,ơ,o,,,ң,h,Қ,K,Ҳ,X,ҳ,x,Ҝ,K,ع,E,چ,c,ч,y,Х,X,٦,7,ֽ,.,َ,',ֿ,',׃,:,ọ,o,Җ,X,ی,s,ฬ,w,∙,�,Τ,T,ⓒ,c,ⓐ,a,ⓟ,p,ⓔ,e,ⓣ,t,Ǎ,A,Х,X,ֳ,.,ی,s,Ỉ,I,̉,',,Z,ọ,o,ẹ,e,ҝ,k,ﺖ,u,ố,o,ﮓ,S,ở,o,ﺕ,u,Қ,K,,Z,̕,',├,|,┤,|,أ,I,,,א,x,ặ,a,ǒ,o,Ờ,O,☼,�,ׁ,.,,Z,ฤ,n,⑷,4,⑵,2,⒪,0,เ,i)
+  return %r
+}
+
+
+;;;CORE CODE;;;
+;MSN OCX Source Code Converted to mIRC code -- Thanks to sid.
+
+;NEW
+; // ocx.mrc - original code by sid
+
+alias passportInitPackage {
+
+  ; // returns the initial passport AUTH package
+
+  return $+( IRCVERS IRC8 MSNTV-TELCO, $crlf, AUTH GateKeeperPassport I :GKSSP\0\0\0, $chr(2), \0\0\0, $chr(1), \0\0\0 )
+} 
+
+alias guestInitPackage {
+
+  ; // returns the initial guest AUTH package
+
+  return $+( AUTH GateKeeper I :GKSSP\0\0\0, $chr(2), \0\0\0, $chr(1), \0\0\0, $crlf, IRCVERS IRC8 MSNTV-TELCO  )
+}
+
+alias authPackageS {
+
+  ; // returns the second AUTH package of the sequence
+
+  return $+( AUTH 0 S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+}
+
+; // constructor
+
+alias -l ocx {
+
+  ; // initialises values
+
+  if ( !$hget(ocx).size ) {
+    ; // if the table doesn't exist - make it
+
+    .hmake ocx 100
+  }
+}
+
+; // global functions
+
+alias ocxMD {
+
+  ; // digests a string in md5 encryption with the OCX's two keys
+  ; // ( ascii string ) : ascii string
+
+  var %string
+  %string = $$1
+  %string = $escBin(%string)
+
+  var %max
+  %max = $numtok( %string, 32 )
+  %string = $gettok( %string, $+( $calc( %max - 7 ), - %max ), 32 )
+  %string = $keyOne %string
+  bset &md5 1 %string
+  %string = $md5( &md5, 1 )
+  %string = $hexToBin(%string)
+  %string = $keyTwo %string
+  bset &md5 1 %string
+  %string = $md5( &md5, 1 )
+  %string = $hexToBin( %string, 1 )
+  return %string
+}
+
+; // global constants
+
+alias -l ascToHex {
+
+  ; // turns ascii into hex
+  ; // ( ascii string, OPTIONAL escapeCharacters = 0 ) : hex string
+
+  var %string, %esc
+  %string = $$1
+  %esc = $2
+
+  var %counter, %length, %character, %hex
+  %counter = 1
+  %length = $len(%string)
+  %hex = ""
+
+  if ( %esc ) {
+    ; // process escape characters
+
+    while ( %counter <= %length ) {
+      %character = $asc($mid( %string, %counter, 1 ))
+      if ( %character == 92 ) {
+        ; // if it's an escape character
+
+        %character = $mid( %string, %counter, 2 )
+        if ( %character == \0 ) {
+          ; // null character - 00 
+
+          %hex = $+( %hex, 00 ) 
+        }
+        elseif ( %character == \t ) {
+          ; // tab character - 09
+
+          %hex = $+( %hex, 09 )
+        }
+        elseif ( %character == \n ) {
+          ; // newline character - 10
+
+          %hex = $+( %hex, 0A )
+        }
+        elseif ( %character == \r ) {
+          ; // carriage return character - 13
+
+          %hex = $+( %hex, 0D )
+        }
+        elseif ( %character == \b ) {
+          ; // space character - 20
+
+          %hex = $+( %hex, 20 )
+        } 
+        elseif ( %character == \c ) { 
+          ; // comma character - 2C
+
+          %hex = $+( %hex, 2C ) 
+        } 
+        elseif ( %character == \\ ) {
+          ; // backslash character - 5C
+
+          %hex = $+( %hex, 5C )
+        }
+        inc %counter 2
+      }
+      else {
+        ; // if it's a normal character
+
+        %hex = $+( %hex, $base( %character, 10, 16 ) )
+        inc %counter
+      }
+    }
+    return %hex
+  }
+
+  else {
+    ; // don't process escape characters
+
+    while ( %counter <= %length ) {
+      %character = $asc($mid( %string, %counter, 1 ))
+      %hex = $+( %hex, $base( %character, 10, 16 ) )
+      inc %counter 
+    }
+    return %hex
+  }
+}
+
+alias -l hexToAsc {
+
+  ; // turns hex into ascii with escape characters
+  ; // ( hex string ) : ascii string
+
+  var %string
+  %string = $$1
+
+  var %counter, %length, %character, %asc
+  %counter = 1
+  %length = $len(%string)
+  %asc = ""
+
+  while ( %counter <= %length ) {
+    %character = $mid( %string, %counter, 2 )
+    if ( %character == 00 ) {
+      ; // null character - \0
+
+      %asc = $+( %asc, \0 )
+    }
+    elseif ( %character == 09 ) {
+      ; //tab character - \t 
+
+      %asc = $+( %asc, \t )
+    }
+    elseif ( %character == 0A ) {
+      ; // newline character - \n 
+
+      %asc = $+( %asc, \n )
+    }
+    elseif ( %character == 0D ) {
+      ; // carriage return character - \r 
+
+      %asc = $+( %asc, \r )
+    }
+    elseif ( %character == 20 ) {
+      ; // space character - \b 
+
+      %asc = $+( %asc, \b )
+    }
+    elseif ( %character == 2C ) {
+      ; // comma character - \c
+
+      %asc = $+( %asc, \c )
+    }
+    elseif ( %character == 5C ) {
+      ; // backslash character - \\
+
+      %asc = $+( %asc, \\ )
+    }
+    else {
+      ; // normal character
+
+      %asc = $+( %asc, $chr($base( %character, 16, 10 )) )
+    }
+    inc %counter 2
+  }
+  return %asc
+}
+
+alias -l bin {
+
+  ; // turns an ascii string into a binary string
+  ; // ( ascii string ) : binary string
+
+  var %string
+  %string = $$1 
+
+  var %counter, %length, %bin, %character
+  %counter = 1
+  %length = $len(%string)
+  %bin = ""
+
+  while ( %counter <= %length ) {
+    %character = $asc($mid( %string, %counter, 1 ))
+    if ( %character == 92 ) {
+      ; // if it's an escape character
+
+      %character = $mid( %string, %counter, 2 )
+      if ( %character == \0 ) {
+        ; // null character - 0
+
+        %bin = %bin 0
+      }
+      elseif ( %character == \t ) {
+        ; // tab character - 9
+
+        %bin = %bin 9
+      }
+      elseif ( %character == \n ) {
+        ; // newline character - 10 
+
+        %bin = %bin 10
+      }
+      elseif ( %character == \r ) {
+        ; // carriage return character - 13
+
+        %bin = %bin 13
+      }
+      elseif ( %character == \b ) {
+        ; // space character - 32
+
+        %bin = %bin 32
+      }
+      elseif ( %character == \c ) {
+        ; // comma character - 44 
+
+        %bin = %bin 44
+      }
+      elseif ( %character == \\ ) {
+        ; // backslash character - 92
+
+        %bin = %bin 92
+      }
+      inc %counter 2
+    }
+    else { 
+      ; // if it's a normal character
+
+      %bin = %bin %character
+      inc %counter
+    }
+  }
+  return %bin
+}
+
+alias -l hexToBin {
+
+  ; // converts hex to a binary string
+  ; // ( hex, OPTIONAL escapeCharacter = 0 ) : bin
+
+  var %string, %esc
+  %string = $$1
+  %esc = $2
+
+  var %counter, %length, %character, %bin
+  %counter = 1
+  %length = $len(%string)
+  %bin = ""
+
+  if ( %esc ) { 
+    ; // include escape characters
+
+    while ( %counter <= %length ) {
+      %character = $mid( %string, %counter, 2 )
+
+      if ( %character == 00 ) {
+        ; // null character - \0
+
+        %bin = %bin 92 48
+      }
+      elseif ( %character == 09 ) { 
+        ; // tab character - \t 
+
+        %bin = %bin 92 116
+      }
+      elseif ( %character == 0A ) { 
+        ; // newline character - \n
+
+        %bin = %bin 92 110
+      }
+      elseif ( %character == 0D ) { 
+        ; // tab character - \r
+
+        %bin = %bin 92 114 
+      }
+      elseif ( %character == 20 ) { 
+        ; // space character - \b
+
+        %bin = %bin 92 98
+      }
+      elseif ( %character == 2C ) { 
+        ; // comma character - \c 
+
+        %bin = %bin 92 99
+      }
+      elseif ( %character == 5C ) { 
+        ; // backspace character - \\
+
+        %bin = %bin 92 92 
+      }
+      else {
+        ; // normal character
+
+        %bin = %bin $base( %character, 16, 10 )
+      }
+      inc %counter 2
+    }
+    return %bin
+  }
+
+  else {
+    ; // don't include escape characters
+
+    while ( %counter <= %length ) {
+      %character = $mid( %string, %counter, 2 )
+      %bin = %bin $base( %character, 16, 10 )
+      inc %counter 2
+    }
+    return %bin
+  }
+}
+
+alias -l escBin {
+
+  ; // replaces escape characters in a binary ascii string with normal ascii values
+  ; // ( binary string ) : bin
+
+  var %string
+  %string = $$1
+
+  bset &string 1 %string
+  bset &bin 1 0 0 0 0 0 0 0 0
+
+  var %counter, %length, %character, %bpos
+  %counter = 1
+  %length = $bvar( &string, 0 )
+  %bpos = 1
+
+  while ( %counter <= %length ) {
+    %character = $bvar( &string, %counter )
+
+    if ( %character == 92 ) {
+      ; // if it's an escape character
+
+      %character = $bvar( &string, $calc( %counter + 1 ) )
+      if ( %character = 48 ) {
+        ; // null character - 0
+
+        bset &bin %bpos 0
+      }
+      elseif ( %character == 116 ) {
+        ; // tab character - 9
+
+        bset &bin %bpos 9
+      }
+      elseif ( %character == 110 ) {
+        ; // newline character - 10
+
+        bset &bin %bpos 10
+      }
+      elseif ( %character == 114 ) {
+        ; // carriage return character - 13
+
+        bset &bin %bpos 13
+      }
+      elseif ( %character == 98 ) {
+        ; // space character - 32
+
+        bset &bin %bpos 32
+      }
+      elseif ( %character == 99 ) {
+        ; // comma character - 44
+
+        bset &bin %bpos 44
+      }
+      elseif ( %character == 92 ) {
+        ; // backspace character - 92
+
+        bset &bin %bpos 92
+      }
+      inc %counter 2 
+    }
+    else {
+      ; // if it's not an escape character
+
+      bset &bin %bpos %character
+      inc %counter
+    }
+    inc %bpos
+  }
+  %length = $bvar( &bin, 0 )
+  return $bvar( &bin, 1, %length )  
+}
+
+; // local constants
+
+alias -l keyOne {
+
+  ; // returns the first key
+
+  return 101 100 112 123 125 101 124 119 120 114 100 115 101 125 125 117 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54
+}
+
+alias -l keyTwo {
+
+  ; // returns the second key
+
+  return 15 14 26 17 23 15 22 29 18 24 14 25 15 23 23 31 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92
+}
+
+; // attribute methods
+
+; // main attribute access methods
+
+alias -l set_ { .hadd ocx $$1 $$2 }
+alias -l get_ { return $hget( ocx, $$1 ) }
+
+
+; // end script
+
+alias -l GateClone {
+  var %i, %o, %int, %c
+  %i = $1-
+  %i = $left( %i, 32 )
+  %i = $+( $str( 0, $calc( 32 - $len( %i ) ) ), %i )
+  %i = $+( $mid( %i, 7, 2 ), $mid( %i, 5, 2 ), $mid( %i, 3, 2 ), $mid( %i, 1, 2 ), $mid( %i, 11, 2 ), $mid( %i, 9, 2 ), $mid( %i, 15, 2 ), $mid( %i, 13, 2 ), $mid( %i, 17 ) )
+  %i = $iif( %i == $str( 0, 32 ), $+( $str( 0, 31 ), 1 ), %i ) 
+  %int = 1
+  while ( %int <= $len(%i) ) { 
+    %c = $mid( %i, %int, 2 ) 
+    %o = $+( %o, $toEscNum( , $mid( %i, %int, 2 ) ) )
+    inc %int 2
+  }
+  return %o
+}
+alias -l toEscNum {
+  var %in 
+  %in = $$2 
+  %in = $iif( $1, $base( %in, $1, 10 ), $base( %in, 16, 10 ) )
+  if ( %in == 0 ) { return \0 }
+  elseif  ( %in == 9 ) { return \t }
+  elseif ( %in == 10 ) { return \n }
+  elseif ( %in == 13 ) { return \r }
+  elseif ( %in == 32 ) { return \b }
+  elseif ( %in == 44 ) { return \c }
+  elseif ( %in == 92 ) { return \\ }
+  else { return $chr(%in) }
+}
+alias -l binary { 
+  var %binary
+  var %i = 1
+  while (%i <= 16) {
+    %binary = $+(%binary,$iif($rand(1,0) == 0,\0,$chr(1)))
+    inc %i
+  }
+  return %binary
+}
+alias -l hex { return $base( $$1, 10, 16 ) }
+alias -l rHex { return $hex($r( 0, 15 )) }
+alias hexString { return $+( $rHex, $rHex, $rHex, $rHex, $rHex, $rHex, $rHex, $rHex ) }
+
+alias -l hash { return $MD5($hexString) }
+
+alias -l guestform {
+  return $mid($1,7,2) $+ $mid($1,5,2) $+ $mid($1,3,2) $+ $left($1,2) $+ $mid($1,11,2) $+ $mid($1,9,2) $+ $mid($1,15,2) $+ $mid($1,13,2) $+ $right($1,16)
+}
+alias -l passform return $base($len($$1),10,16,8) $+ $1 $+ $base($len($$2),10,16,8) $+ $2
+
+alias r exit | run $mircexe
+
+;dream sock = channels
+
+;;Socket updater by Sky;;
+
+on *:start:{
+  ddeserver on BotServ
+}
+
+alias sck {
+  return $+(dream.,$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z))
+}
+
+alias establish {
+  if ($sock($hget(channels,$3)).status == active) { 
+    /dde Terminal command "" /msg $chr(36) $+ active %mynick Already In Channel Socket $3
+    halt
+  }
+  set %mnick $4
+  set %mynick $iif($5,$5,%mnick $+ [Dream])
+  echo -a Authenticating to $3 on $1 $+ : $+ $2
+  var %x = $sck
+  hadd -m sck %x $3
+  hadd -m channels $3 %x
+  sockopen %x $1 $2
+  sockmark %x $3
+}
+
+alias closesck {
+  $+(.timerkeepalive,$hget(channels,$1)) off
+  sockwrite -tn $hget(channels,$1) QUIT : $+ $iif(!$2-,Dream,$2-)
+}
+
+alias closeall {
+  .timer* off
+  sockclose *
+}
+alias nick {
+  set %mynick $1
+  sockclose *
+}
+alias botdeop {
+  sockwrite $hget(channels,$1) $+(ACCESS $chr(37),$1 CLEAR OWNER,$lf,PROP $chr(37),$1 OWNERKEY :,$rand(a,z),$rand(a,z),$lf,MODE $chr(37),$1 -q $2,$lf,PROP $chr(37),$1 OWNERKEY :,$rand(a,z),$rand(a,z),$crlf)
+}
+alias bothop {
+  sockwrite $hget(channels,$1) $+(PART $chr(37) $+ $1,$lf,JOIN $chr(37) $+ $1,$crlf)
+}
+alias botjoin {
+  sockwrite $hget(channels,$1) $+(JOIN $chr(37) $+ $1,$crlf)
+}
+alias botsay {
+  sockwrite $hget(channels,$1) $+(PRIVMSG $chr(37) $+ $1 :,$2-,$crlf)
+}
+alias botkick {
+  sockwrite $hget(channels,$1) $+(KICK $chr(37) $+ $1 $2 ,:,$3-,$crlf)
+}
+alias botmode {
+  sockwrite $hget(channels,$1) $+(MODE $chr(37) $+ $1 $2-,$crlf)
+}
+
+alias listroom {
+  var %i = 1
+  while (%i <= $hget($1).size) {
+    if (. !isin $hget($1,$hget($1,%i).item)) && ($hget($1,$hget($1,%i).item) != $null) {
+      echo -a 4Warning $hget($1,%i).item
+      ;sockwrite -tn $hget(channels,$1) KICK $chr(37) $+ $1 :
+    }
+    inc %i 
+  }
+}
+
+alias doinvite {
+  .timerinvites 0 5 invites $hget(channels,$1)
+  /dde Terminal command "" /msg $chr(36) $+ active Mass invite activated.
+}
+
+alias recon {
+  var %i = 1
+  while (%i <= $sock(*,0)) {
+    if ($sock(*,%i).mark == $1) {
+      sockclose $sock(*,%i)
+    }
+    inc %i
+  }
+}
+
+alias keepalive {
+  if ($sock($1).status != active) && ($sock($1).status != connecting) { 
+    sockopen $1 $2 $3
+    sockmark $1 $4
+  }
+}
+
+on *:sockopen:dream.*:{
+  set % [ $+ [ $sockname ] ] [ $+ [ .ticks ] ] $ticks
+  $+(.timerkeepalive,$sockname) -m 0 10 keepalive $sockname $sock($sockname).ip $sock($sockname).port $sock($sockname).mark
+  sockwrite $sockname $+(NICK %mynick,$lf,$passportInitPackage,$crlf)
+}
+
+on *:sockread:dream.*:{
+  sockread -n &read
+  var %data = $bvar(&read,1,$bvar(&read,0)).text
+  tokenize 32 %data
+  ;  echo -a %data
+  if ($4-5 == -q %mynick) {
+    if (%qflood. [ $+ [ $sock($sockname).mark ] ] != true) {
+      set -u1 %qflood. [ $+ [ $sock($sockname).mark ] ] true
+      var %x = $+(MODE %mynick h %key. [ $+ [ $sock($sockname).mark ] ],$lf,MODE $3 -q $remove($gettok($1,1,33),:),$lf,PROP $3 OWNERKEY :,Dream-,$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$lf,Access $3 clear owner,$lf,access $3 add owner %gate,$lf)
+      sockwrite -b $sockname $len(%x) %x
+    }
+  }
+  if ($4-5 == +q %mynick) {
+    if (%qwflood. [ $+ [ $sock($sockname).mark ] ] != true) {
+      set -u1 %qwflood. [ $+ [ $sock($sockname).mark ] ] true
+      sockwrite $sockname $+(PROP $3 OWNERKEY :,Dream-,$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$lf,access $3 add owner %gate,$crlf)
+    }
+  }
+  if ($1 == PING) { sockwrite -tn $sockname PONG $2- }
+  if ($2 == MODE) && ($4 == -q) {
+    hadd -m $remove($3,:,$chr(37)) $remove($gettok($1,1,33),:) $remove($hget($remove($3,:),$5),.)
+  }
+  if ($2 == MODE) && ($4 == +q) {
+    hadd -m $remove($3,:,$chr(37)) $remove($gettok($1,1,33),:) $remove($hget($remove($3,:),$5),.) $+ .
+  }
+  if (AUTH GateKeeperPassport S == $1-3) { 
+    var %max, %string
+    %max = $bvar( &read, 0 )
+    %max = %max - 2
+    %string = $bvar( &read, $calc( %max - 16 ), 17 )
+    %string = $ocxMd(%string)
+    bset &auth 1 %string
+    sockwrite $sockname $+( AUTH GateKeeper S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+    sockwrite $sockname &auth
+    sockwrite $sockname $+($crlf,AUTH GateKeeperPassport S : $+ $passform(%ticket,%profile),$lf,USER $me * * :15D14r1eam - extention sockbot to Terminal (Auth Time: $calc($calc($ticks - $int(% [ $+ [ $sockname ] ] [ $+ [ .ticks ] ])) / 1000) Secs ),$lf,PROP %mynick SUBSCRIBERINFO $+(:,%sinfo),$lf,GOTO,$chr(32),$chr(37),$sock($sockname).mark %mnick,$crlf)
+    unset % [ $+ [ $sockname ] ] [ $+ [ .ticks ] ]
+  }
+  elseif ($1-3 == Auth GateKeeperPassport *) {
+    set %gate $4 
+    /dde Terminal command "" /set $+($chr(37),botgate) $4
+  }
+  elseif ($2 == KICK) {
+    if ($readini(Protection.ini,Address,$hget(Address,$4)) == true) && ($readini(Protection.ini,Halt,$hget(Address,$remove($gettok($1,1,33),:))) == $null) && ($nick != %mynick) {
+      sockwrite $sockname $+(access $3 clear,$lf,access $3 add deny $hget(Address,$remove($gettok($1,1,33),:)),$lf,kick $3 $remove($gettok($1,1,33),:) :Protected $4,$lf,mode $3 +q $me,$crlf)
+    }
+  }
+  elseif ($2 == JOIN) && ($gettok($1,1,33) == $+(:,%mynick)) {
+    sockwrite -tn $sockname WHO $remove($4,:)
+  }
+  elseif ($2 == JOIN) {
+    hadd -m $remove($4,:,$chr(37)) $remove($gettok($1,1,33),:) $remove($hget($remove($4,:),$remove($gettok($1,1,33),:)),$gettok($3,4,44)) $+ $gettok($3,4,44)
+    hadd -m Address $remove($gettok($1,1,33),:) $gettok($1,2,33)
+    inc -u3 %join. [ $+ [ $sock($sockname).mark ] ]
+    if (%join. [ $+ [ $sock($sockname).mark ] ] = 5) {
+      var %x = MODE $chr(37) $+ $sock($sockname).mark +i $+ $lf
+      sockwrite -b $sockname $len(%x) %x
+      %x = $+(ACCESS $chr(37) $+ $sock($sockname).mark CLEAR HOST,$lf)
+      sockwrite -b $sockname $len(%x) %x
+    }
+  }
+  elseif ($4 == OWNERKEY) {
+    set %key. [ $+ [ $sock($sockname).mark ] ] $remove($5,:)
+  }
+  elseif ($2 == PART) && ($gettok($1,1,33) == $+(:,%mynick)) {
+    hfree $sock($sockname).mark
+  }
+  elseif ($2 == PART) {
+    hdel $remove($3,:,$chr(37)) $remove($gettok($1,1,33),:)
+  }
+  elseif ($2 == QUIT) {
+    if ($hget($remove($3,:,$chr(37)),$remove($gettok($1,1,33),:))) {
+      hdel $remove($3,:,$chr(37)) $remove($gettok($1,1,33),:)
+    }
+  }
+  elseif ($2 == KICK) && ($4 == %mynick) {
+    sockwrite $sockname $+(JOIN $chr(37),$sock($sockname).mark %key. [ $+ [ $sock($sockname).mark ] ],$lf,KICK $chr(37),$sock($sockname).mark $remove($gettok($1,1,33),:) :Dream,$lf,PROP $chr(37),$sock($sockname).mark OWNERKEY :,Dream-,$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$lf,Access $chr(37),$sock($sockname).mark clear owner,$lf,access $chr(37),$sock($sockname).mark add owner %gate,$crlf)
+    hfree $sock($sockname).mark
+  }
+  elseif ($2 == KICK) {
+    hdel $remove($3,:,$chr(37)) $4
+  }
+  elseif ($2 == KILL) {
+    hdel $sock($sockname).mark $3
+  }
+  elseif ($2 == 352) {
+    hadd -m $remove($4,:,$chr(37)) $8 $9
+    hadd -m Address $8 $replace($5-6,$chr(32),$chr(64))
+  }
+}
+
+;;Socket updater by Sky;;
+
+alias update {
+  if (!%account) { set %account $$?"Please enter in your email." }
+  if (!%password) { set %password $$?"Please enter in your password." }
+  getinfo %account %password
+  set %udticks $ticks
+}
+
+alias -l getinfo {
+  sockclose update
+  if ($gettok(%account,2,64) == msn.com) {
+    sockopen update msnialogin.passport.com 80
+    sockmark update $1 $2 msnialogin.passport.com
+  }
+  elseif ($gettok(%account,2,64) == hotmail.com) {
+    sockopen update loginnet.passport.com 80
+    sockmark update $1 $2 loginnet.passport.com
+  }
+  else {
+    sockopen update login.passport.com 80
+    sockmark update $1 $2 login.passport.com
+  }
+}
+
+on *:sockopen:update:{
+  sockwrite -n $sockname GET /login2.srf HTTP/1.1
+  sockwrite -n $sockname Authorization: Passport1.4 OrgVerb=GET,OrgURL=?,sign-in= $+ $gettok($gettok($sock($sockname).mark,1,32),1,64) $+ $chr(37) $+ 40 $+ $gettok($gettok($sock($sockname).mark,1,32),2,64) $+ ,pwd= $+ $gettok($sock($sockname).mark,2,32) $+ ,id=507
+  sockwrite -n $sockname Host: $+($gettok($sock($sockname).mark,3,32),$crlf,$crlf)
+}
+
+on *:sockread:update:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if (%data != $null) {
+    if ($1 == Authentication-Info:) {
+      set %ticket $right($gettok($mid($3,$pos($3,'t=),$len($3)),1,38),-3)
+      set %profile $right($gettok($gettok($mid($3,$pos($3,'t=),$len($3)),2,38),1,39),-2)
+      set %pauth : $+ $passform(%ticket,%profile)
+      render
+    }
+    elseif ($3 == Unauthorized) {
+      conmessage 4Passport details incorrect.
+      sockclose $sockname
+    } 
+  }
+}
+
+
+alias render {
+  sockclose renderchat
+  sockopen renderchat chat.msn.com 80
+}
+on *:sockopen:renderchat:{
+  sockwrite -n $sockname GET /renderchat.msnw? HTTP/1.1
+  sockwrite -n $sockname HOST: chat.msn.com
+  sockwrite -n $sockname User-Agent: compatible; MSIE 4.0; Windows NT 4.0
+  sockwrite -n $sockname Cookie: MSPAuth= $+ %ticket $+ ; MSPProf= $+ %profile $+ $crlf $+ $crlf
+}
+
+on *:sockread:renderchat:{
+  sockread -n &read
+  if ($sockbr == 0) { return }
+  if ($bvar(&read,$bfind(&read, 1, 34 83 117 98 115 99 114 105 98 101 114 73 110 102 111 34),$bvar(&read,0))) { 
+    if (SubscriberInfo isin $bvar(&read,$bfind(&read,1,34 83 117 98 115 99 114 105 98 101 114 73 110 102 111 34),$bvar(&read,0)).text) { 
+      var %x = $bvar(&read,$bfind(&read,1,34 83 117 98 115 99 114 105 98 101 114 73 110 102 111 34),$bvar(&read,0)).text
+      %x = $mid(%x,$pos(%x,VALUE),$len(%x))
+      %x = $mid(%x,$calc($pos(%x,") + 1),$len(%x))
+      set %sinfo $mid(%x,1,$calc($pos(%x,") - 1))
+      echo -s 4Passport update complete for %account in $calc($calc($ticks - %udticks) / 1000) Seconds
+      /dde Terminal command "" /msg $chr(36) $+ active 4Passport update complete in $calc($calc($ticks - %udticks) / 1000) Seconds
+    }
+  }
+}
+
+alias invites {
+  inc %invite
+  if (%invite > 5) { sockclose $1 | set %invite 0 | halt }
+  sockwrite -tn $1 INVITE $read(Names.txt)
+}
+
+;;;;Dream Engine;;;;

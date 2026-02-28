@@ -1,0 +1,60 @@
+;;;Access Checker;;;
+
+menu menubar {
+  Terminal
+  .Extra
+  .. $+ $iif($group(#AccessChecker) == on,$style(1),$null) $+ Access Checker:{ $iif($group(#AccessChecker) == on,.disable #AccessChecker,.enable #AccessChecker) }
+}
+
+#AccessChecker off
+
+on *:OWNER:#:{
+  if (%acownerflood. [ $+ [ # ] ] != true) {
+    set -u1 %acownerflood. [ $+ [ # ] ] true
+    if ($nick == access) && ($nick != $me) && ($me isowner #) { set %chkac. [ $+ [ # ] ] true | access # }
+  }
+}
+
+raw 804:*:{
+  var %nick = $left($readini(Names.ini,Address,$6),-1)
+  if (%nick == $null) { %nick = $ial($6).nick }
+  if ($3 == OWNER) && ($4 == *!*@*$*) {
+    warningmessage Access Warning on $$2 - %nick Has added * to owner access. Removing... 
+    echo $$2 4Access Warning on $$2 - %nick Has added * to owner access. Removing...
+    echo $$2 4Entry Information: $2-
+    access $$2 delete owner *
+  }
+  elseif ($4 == >*!*@*$*) && ($3 != DENY) {
+    warningmessage Access Warning on $$2 - %nick Has added an alternate access level from deny ( $+ $3 $+ ) to guest. Removing...
+    echo $$2 4Access Warning on $$2 - %nick Has added an alternate access level from deny ( $+ $3 $+ ) to guest. Removing...
+    echo $$2 4Entry Information: $2-
+    access $$2 delete $3 $4
+  }
+  elseif ($4 == *!*@*$*) && ($3 == DENY) {
+    warningmessage Access Warning on $$2 - %nick Has added deny to *. Removing...
+    echo $$2 4Access Warning on $$2 - %nick Has added deny to *. Removing...
+    echo $$2 4Entry Information: $2-
+    access $$2 delete $3 $4
+  }
+  elseif (*!*@GateKeeper$* iswm $4) && ($3 == OWNER) || ($3 == VOICE) || ($3 == HOST) {
+    if (Passport !isin $4) {
+      if ($len($gettok($gettok($4,2,33),1,64)) == 16) { halt }
+      if ($len($gettok($gettok($4,2,33),1,64)) == 32) { halt }
+      warningmessage Access Warning on $$2 - %nick Has added a incompatible entry to access. Removing...
+      echo $$2 4Access Warning on $$2 - %nick Has added a incompatible entry to access. Removing...
+      echo $$2 4Entry Information: $2-
+      access $$2 delete $3 $4
+    }
+  }
+  elseif ($3 == GRANT) {
+    warningmessage Access Warning on $$2 - %nick Has added grant to $4 $+ . Removing...
+    echo $$2 4Access Warning on $$2 - %nick Has added grant to $4 $+ . Removing...
+    echo $$2 4Entry Information: $2-
+    access $$2 clear grant    
+  }
+  if (%acownerflood. [ $+ [ $2 ] ] == true) { halt }
+  echo -s $2- 10 $+ $gettok($readini(Names.ini,Address,$6),1-30,44)
+  halt
+}
+
+#AccessChecker end

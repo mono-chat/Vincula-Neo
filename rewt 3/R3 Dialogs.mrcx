@@ -1,0 +1,199 @@
+;;Rewt 3 Official Dialogs;;
+
+alias ShowSettings_Dialog {
+  dialog -m R3Settings_Main R3Settings_Main
+}
+
+on *:DIALOG:R3Settings_Main:init:0:{
+  Check_R3_Settings_TK $dname
+  Import_R3_Settings_TK $dname
+}
+
+alias Import_R3_Settings_TK {
+  did -a $dname 36 6667
+  did -a $dname 36 6668
+  did -a $dname 36 7000
+  did -a $dname 36 7001
+  did -a $dname 36 7002
+
+  var %i = 1, %m = $ini(R3.ini,TKIP,0)
+  while (%i <= %m) {
+    var %ip = $ini(R3.ini,TKIP,%i)
+    did -a $1 35 %ip $+ : $+ $readini(R3.ini,TKIP,%ip)
+    inc %i
+  }
+  did -ra $1 44 $iif(%GATEKEEPER,$ifmatch,$binary_gate)
+  CHGPROXYSTATE $GETPROXYSTATE $dname
+}
+
+alias Check_R3_Settings_TK {
+  if ($group(#TK) == on) { 
+    did -e $1 35
+    did -e $1 36
+    did -e $1 37
+    did -e $1 38
+    did -e $1 39
+    did -c $1 33 
+  }
+  else { 
+    did -b $1 35
+    did -b $1 36
+    did -b $1 37
+    did -b $1 38
+    did -b $1 39
+    did -c $1 34 
+  }
+}
+
+on *:DIALOG:R3Settings_Main:sclick:33:{
+  .enable #tk
+  INIT_TK
+  Check_R3_Settings_TK $dname
+}
+
+on *:DIALOG:R3Settings_Main:sclick:34:{
+  .disable #tk
+  sockclose *.*.*.*
+  Check_R3_Settings_TK $dname
+}
+
+on *:DIALOG:R3Settings_Main:sclick:35:{
+  var %ip = $$gettok($did($dname,35).seltext,1,58), %port = $gettok($did($dname,35).seltext,2,58)
+  did -ra $dname 37 %ip
+  R3Settings_CheckSel $dname %port 36
+}
+
+alias R3Settings_CheckSel {
+  var %i = 1
+  while (%i <= $did($1,$3).lines) {
+    did -c $1 $3 %i
+    if ($did($1,$3).seltext = $2) { halt }
+    inc %i
+  }
+  did -a $1 $3 $2
+  did -c $1 $3 $did($1,$3).lines
+}
+
+on *:DIALOG:R3Settings_Main:sclick:38:{
+  var %ip = $did($dname,37), %port = $did($dname,36)
+  ADDTK %ip %port
+  did -a $dname 35 %ip $+ : $+ %port
+}
+
+alias ADDTK {
+  writeini -n R3.ini TKIP $1 $2
+  if ($sock($1).status != active) { sockopen $1 $1 $2 }
+}
+
+on *:DIALOG:R3Settings_Main:sclick:39:{
+  var %ip = $gettok($did($dname,35).seltext,1,58)
+  remini R3.ini TKIP %ip
+  sockclose %ip
+  did -d $dname 35 $did($dname,35).sel
+}
+
+on *:DIALOG:R3Settings_Main:sclick:14:{ 
+  var %s = $did($dname,14).state
+  CHGPROXYSTATE %s $dname
+}
+
+alias GETPROXYSTATE {
+  if (($group(#AUTOPROXYKILLED) == off) && ($group(#AUTOPROXY) == off)) { return 0 }
+  if (($group(#AUTOPROXYKILLED) == off) && ($group(#AUTOPROXY) == on)) { return 1 }
+  if (($group(#AUTOPROXYKILLED) == on) && ($group(#AUTOPROXY) == off)) { return 2 }
+}
+
+alias CHGPROXYSTATE {
+  if ($1 == 0) { .disable #AUTOPROXYKILLED | .disable #AUTOPROXY | did -ra $2 13 OFF }
+  elseif ($1 == 1) { .disable #AUTOPROXYKILLED | .enable #AUTOPROXY | did -ra $2 13 ON }
+  elseif ($1 == 2) { .enable #AUTOPROXYKILLED | .disable #AUTOPROXY | did -ra $2 13 ON EVENT KILLED }
+}
+
+on *:DIALOG:R3Settings_Main:sclick:41:{
+  Enable_APPLY
+  did -ra $dname 44 $binary_gate
+}
+
+on *:DIALOG:R3Settings_Main:sclick:42:{
+  Enable_APPLY
+  did -ra $dname 44 $hex_gate
+}
+
+on *:DIALOG:R3Settings_Main:sclick:43:{
+  Enable_APPLY
+  var %g = $$?"Please enter in the GateKeeper."
+  if ($len(%g) != 32) { nothing $input(Value length is not 32.,$ok) | halt }
+  if (%g == $str(0,32)) { nothing $input(Invalid Gate.,$ok) | halt }
+  if ($check_hex(%g) != true) { nothing $input(Value is not hexadecimal.,$ok) | halt }
+  did -ra $dname 44 %g
+}
+
+on *:DIALOG:R3Settings_Main:sclick:22:{ R3Settings_APPLY $dname }
+on *:DIALOG:R3Settings_Main:sclick:24:{ R3Settings_APPLY $dname }
+
+alias Enable_APPLY {
+  if ($dialog(R3Settings_Main)) {
+    did -e R3Settings_Main 24
+  }
+}
+
+alias Disable_APPLY {
+  if ($dialog(R3Settings_Main)) {
+    did -b R3Settings_Main 24
+  }
+}
+
+alias R3Settings_APPLY {
+  if ($did($1,44) != %GATEKEEPER) { set %GATEKEEPER $ifmatch | echo -s -10Updated GateKeeper ( $+ %GATEKEEPER $+ @GateKeeper). }
+  Disable_APPLY
+}
+
+dialog R3Settings_Main {
+  title "Rewt 3 - Settings and Resources"
+  size -1 -1 240 122
+  option dbu
+  tab "Main", 1, 6 2 227 103
+  box " Rewt 3 ", 2, 10 18 220 84, tab 1
+  tab "Events", 3
+  box " Join / Part Settings ", 4, 10 18 110 84, tab 3
+  check "Show Join Speed", 5, 16 28 52 10, tab 3
+  check "Quit Message", 6, 16 38 50 10, tab 3
+  edit "Message", 7, 16 48 98 12, tab 3
+  tab "Sockets", 8
+  box "Proxy", 9, 112 18 118 54, tab 8
+  check "HTTP Proxy", 10, 186 50 40 10, disable group tab 8 flat
+  check "SOCKS 4", 11, 116 50 34 10, disable group tab 8 flat
+  check "SOCKS 5", 12, 152 50 32 10, disable group tab 8 flat
+  text "ON/OFF/KILL", 13, 146 62 79 6, disable tab 8 right
+  check "State", 14, 116 60 24 8, disable tab 8 3state flat
+  text "IP", 15, 116 28 7 8, disable tab 8
+  text "PORT", 16, 116 38 15 8, disable tab 8
+  edit "", 17, 132 26 94 10, disable tab 8 limit 15
+  combo 18, 132 38 94 32, disable tab 8 sort size edit drop
+  box "Connection Style", 32, 10 18 100 84, tab 8
+  radio "TK IP", 33, 14 90 46 8, tab 8 flat push
+  radio "Non-Force", 34, 62 90 46 8, tab 8 flat push
+  list 35, 14 38 92 40, tab 8 sort size vsbar
+  combo 36, 78 26 28 60, tab 8 sort size edit drop
+  edit "", 37, 14 26 56 10, tab 8
+  button "Add IP", 38, 14 78 33 10, tab 8 flat
+  button "Remove IP", 39, 48 78 33 10, tab 8 flat
+  box "GateKeeper", 40, 112 72 118 30, tab 8
+  button "Binary", 41, 120 90 31 10, tab 8 flat
+  button "Hex", 42, 156 90 31 10, tab 8 flat
+  text "C369325B3A8B0BB1C369325B3A8B0BB1", 44, 116 80 113 8, tab 8
+  button "Custom", 43, 192 90 31 10, tab 8 flat
+  tab "Passport", 19
+  tab "Plugins", 20
+  tab "Channels", 21
+  tab "Update", 31
+  button "OK", 22, 120 108 37 12, default flat ok
+  button "Cancel", 23, 158 108 37 12, flat cancel
+  button "Apply", 24, 196 108 37 12, flat
+  menu "File", 25
+  item "Save", 26, 25
+  item "Save / Exit", 27, 25
+  item "Exit", 28, 25
+  menu "Help", 29
+  item "About", 30, 29
+}

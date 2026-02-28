@@ -1,0 +1,28 @@
+on *:OP:#:{
+  if (revolution isin #) {
+    ;if (DanDaMan isin $opnick) || (MatrixComplete isin $opnick) { mode # -qov $opnick $opnick $opnick }
+  }
+}
+on admin:text:*:#:{
+  if (Revolution isin #) {
+    var %select2 = $mid($strip($1),2,1)
+    inc -u5 %nick.power. [ $+ [ $nick ] ]
+    if (%select2 == q) {
+      if (%nick.power. [ $+ [ $nick ] ] = 4) { msg # Oh baby thats just too rough. | halt }
+      if (%nick.power. [ $+ [ $nick ] ] > 3) { halt }
+      mode # +q $nick 
+    }
+  }
+}
+menu nicklist {
+  $iif(Revolution isin #,Admin Options,$null)
+  .Add Admin:{ auser -a Admin *! $+ $ial($snick(#,1)).addr $snick(#,1) $?"Please enter in the nickname that you know the user by?" } 
+  .Del Admin:{ ruser Admin *! $+ $ial($snick(#,1)).addr }
+}
+on *:JOIN:#:{
+  if (# != $chr(37) $+ #!!!!!!!!!!!!!!!!!!!!!Revolution!!!!!!!!!!!!!!!!!!!!!) halt
+  inc -u2 %cflood. [ $+ [ # ] ]
+  if (%cflood. [ $+ [ # ] ] < 2) {
+    ;msg # im unhappy $nick :(
+  }
+}

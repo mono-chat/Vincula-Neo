@@ -1,0 +1,1740 @@
+;add me in
+;    if (%nullp == on) && ($5 == :) { sockwrite $sockname $+(kick $3 $remove($gettok($1,1,33),:) :Null,$lf,access $3 add deny $remove($gettok($1,1,33),:),$lf,access $3 clear owner,$lf,prop $3 ownerkey rewt $+ $rand(1000,9999),$lf,access $3 add owner $ial($me).addr 0 :4rewt,$crlf) }
+
+on *:sockread:chan.?????:{
+  sockread -n &read
+  var %data = $bvar(&read,1,$bvar(&read,0)).text
+  tokenize 32 %data 
+  if ($2 != NICK) {
+    showdebug 2< $+ $sockname $+ > 10 $+ $1-
+  }
+  if ( $bvar(&read,$calc($bfind(&read,1,32) + 1),$bvar(&read,0)).text $bvar(&read,2,$calc($bfind(&read,1,33) - 2)).text == MODE $3 -q $me $iif($bvar(&read,2,$calc($bfind(&read,1,33) - 2)).text == $me,$null,$bvar(&read,2,$calc($bfind(&read,1,33) - 2)).text) ) {  
+    if (%aflood. [ $+ [ $3 ] ] != true) {
+      sockwrite $sockname $+(MODE $me h %key. [ $+ [ $3 ] ],$lf,MODE $3 -q $bvar(&read,2,$calc($bfind(&read,1,33) - 2)).text,$lf,PROP $3 OWNERKEY $rand(a,z),$crlf)
+      sockwrite $sockname $+(prop $3 ownerkey $tkey,$lf,ACCESS $3 CLEAR OWNER,$crlf)
+      set -u2 %aflood. [ $+ [ $3 ] ] true
+    }
+  }
+  if ($mid($2,1,2) == $+($chr(37),$chr(35))) {
+    sockmark $sockname $2
+    hadd -m channels $2 $sockname
+    hadd -m ext $sockname $2
+  }
+  if ($mid($3,1,2) == $+($chr(37),$chr(35))) {
+    sockmark $sockname $3
+    hadd -m channels $3 $sockname    
+    hadd -m ext $sockname $3
+  }
+  if ($mid($4,1,2) == $+($chr(37),$chr(35))) {
+    sockmark $sockname $4
+    hadd -m channels $4 $sockname  
+    hadd -m ext $sockname $4
+  }
+  if (AUTH GateKeeperPassport S isin $1-) { 
+    if ((!%ticket) || (!%profile)) {
+      .timerkeepfinds $+ $sockname off
+      .timerchecksck $+ $sockname off
+      showerror Socket $sockname has been closed due to absense of passport info.
+      sockclose $sockname
+    }
+    var %max, %string
+    %max = $bvar( &read, 0 )
+    %max = %max - 2
+    %string = $bvar( &read, $calc( %max - 16 ), 17 )
+    %string = $ocxMd(%string)
+    bset &auth 1 %string
+    if ($sock($sockname).status == active) {
+      sockwrite $sockname $+( AUTH GateKeeper S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+      sockwrite $sockname &auth
+      sockwrite $sockname $+($crlf,AUTH GateKeeperPassport S : $+ $passform(%ticket,%profile),$crlf)
+    }
+  }
+  elseif (AUTH GateKeeper S isin $1-) && ($4 != :OK) {
+    var %max, %string
+    %max = $bvar( &read, 0 )
+    %max = %max - 2
+    %string = $bvar( &read, $calc( %max - 16 ), 17 )
+    %string = $ocxMd(%string)
+    bset &auth 1 %string
+    sockwrite $sockname $+( AUTH GateKeeper S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+    sockwrite $sockname &auth
+    sockwrite $sockname $+($getauth($getterminal(AddressType)),$crlf)
+  }
+  elseif ($1-3 == AUTH GateKeeper *) {
+    sockwrite -tn $sockname USER $me * * :Terminal by Sky(Guest)
+    if ($sock($sockname).mark != $null) { sockwrite -tn $sockname JOIN $sock($sockname).mark }
+  }
+  ;
+  elseif ($1-3 == AUTH GateKeeperPassport *) {
+    sockwrite $sockname $+(USER $me * * :Terminal by Sky(Passport),$lf,MODE $me +i,$lf,PROP $me MSNPROFILE :1,$crlf)
+    if (%sinfo != $null) {
+      sockwrite -tn $sockname PROP $me SUBSCRIBERINFO $+(:,%sinfo)
+    }
+    elseif (%sinfo == $null) {
+      showerror $sockname Warning. Your passport is not subscribed or you do not have any subscriber info presant.
+    }
+    if ($sock($sockname).mark != $null) { sockwrite -tn $sockname JOIN $sock($sockname).mark }
+  }
+  elseif ($2 == 934) { 
+    sockwrite -tn Local $1-
+    part $4
+    set %key. [ $+ [ $4 ] ] $rand(10000,99999)
+    sockwrite -tn $grabnav CREATE CP $4 $chr(37) $+ Terminal\bBy\bSky l 99999 EN-US 1 %key. [ $+ [ $4 ] ] 0
+    .timerkeepfinds $+ $sockname off
+    .timerchecksck $+ $sockname off
+    .timersockstream. $+ $sockname off
+    sockclose $sockname
+    sockwrite -tn Local $1 KICK $4 $me :System Regroup...
+  }
+  elseif ($1-5 == $1 MODE $3 +q $me) {
+    if (%qflood. [ $+ [ $3 ] ] != true) {
+      set -u2 %qflood. [ $+ [ $3 ] ] true
+      sockwrite $sockname $+(prop $3 ownerkey $tkey,$lf,access $3 add owner $ial($me).addr 0 :15T14erminal,$lf,mode $3 +v $me,$crlf)
+    }
+    sockwrite -tn Local $1-
+  }
+  elseif ($2 == KICK) && ($remove($gettok($1,1,33),:)) && ($4 == $me) {
+    sockwrite $sockname $+(join $3 %key. [ $+ [ $3 ] ],$lf,kick $3 $remove($gettok($1,1,33),:) :Terminal AK,$lf,access $3 clear owner,$lf,prop $3 ownerkey : $+ $tkey,$crlf)
+    echo $3 4 $+ $msnactionspace(TOPIC) Sockread has detected a kick from $remove($gettok($1,1,33),:)) ( $+ $right($5-,-1) $+ )
+  }
+  elseif ($2 == NICK) {
+    sockwrite -tn Local $1- $sock($sockname).mark
+  }
+  elseif ($2 == JOIN) && ($getterminal(ircvers) > 6) { 
+    if ($remove($gettok($1,1,33),:) == $me) { sockwrite -tn $sockname WHO $remove($4,:) }
+    if (F isin $gettok($3,3,44)) { hadd -m GENDER $remove($gettok($1,1,33),:) FEMALE }
+    elseif (M isin $gettok($3,3,44)) { hadd -m GENDER MALE }
+    else { hadd -m GENDER NEITHER }
+    sockwrite -tn Local $1 $2 $4 
+    if ($gettok($3,4,44) != $null) { sockwrite -tn Local :Access!Access@SND MODE $remove($4,:) + $+ $replace($gettok($3,4,44),.,q,@,o,+,v) $remove($gettok($1,1,33),:) }
+    if (> isin $remove($gettok($1,1,33),:)) {
+      if ($getterminal(guestflood) == on) {
+        inc -u4 %gjoin. [ $+ [ $sock($sockname).mark ] ]
+        if (%gjoin. [ $+ [ $sock($sockname).mark ] ] <= 1) { set -u4 %gjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ %gjoin. [ $+ [ $sock($sockname).mark ] ] ] ] $remove($gettok($1,1,33),:) }
+        elseif (%gjoin. [ $+ [ $sock($sockname).mark ] ] > 3) {
+          if (%gjoin. [ $+ [ $sock($sockname).mark ] ] == 4) && ($me isowner $remove($4,:)) || ($me isop $remove($4,:)) {
+            warningmessage Guest Flood Detected on $sock($sockname).mark
+            pushbuff $sockname $+(access $sock($sockname).mark clear voice,$lf,access $sock($sockname).mark add deny >*)
+            pushbuff $sockname $+(kick $sock($sockname).mark %gjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 1 ] ] :Guest Flood Detected,$lf,kick $sock($sockname).mark %gjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 2 ] ] :Guest Flood Detected,$lf,kick $sock($sockname).mark %gjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 3 ] ] :Guest Flood Detected,$lf,kick $sock($sockname).mark $remove($gettok($1,1,33),:) :Guest Flood Detected)
+          }
+          elseif (%gjoin. [ $+ [ $sock($sockname).mark ] ] > 4) && ($me isowner $remove($4,:)) || ($me isop $remove($4,:)) {
+            pushbuff $sockname kick $sock($sockname).mark $remove($gettok($1,1,33),:) :Guest Flood Detected
+          }
+        }
+      }
+    }
+    elseif (> !isin $remove($gettok($1,1,33),:)) {
+      if ($getterminal(passportflood) == on) {
+        inc -u2 %pjoin. [ $+ [ $sock($sockname).mark ] ]
+        if (%pjoin. [ $+ [ $sock($sockname).mark ] ] <= 3) { set -u4 %pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ %pjoin. [ $+ [ $sock($sockname).mark ] ] ] ] $remove($1,:) }
+        elseif (%pjoin. [ $+ [ $sock($sockname).mark ] ] > 3) {
+          if (%pjoin. [ $+ [ $sock($sockname).mark ] ] == 4) && ($me isowner $remove($4,:)) || ($me isop $remove($4,:)) {
+            warningmessage Passport Flood Detected on $sock($sockname).mark
+            if ($gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 1 ] ],2,33) != $null) {
+              pushbuff $sockname $+(kick $sock($sockname).mark $gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 1 ] ],1,33) :Passport Flood Detected,$lf,access $sock($sockname).mark add deny $gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 1 ] ],2,33)))
+            }
+            if ($gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 2 ] ],2,33) != $null) {
+              pushbuff $sockname $+(kick $sock($sockname).mark $gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 2 ] ],1,33) :Passport Flood Detected,$lf,access $sock($sockname).mark add deny $gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 2 ] ],2,33)))
+            }
+            if ($gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 3 ] ],2,33) != $null) {
+              pushbuff $sockname $+(kick $sock($sockname).mark $gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 3 ] ],1,33) :Passport Flood Detected,$lf,access $sock($sockname).mark add deny $gettok(%pjoin. [ $+ [ $sock($sockname).mark ] ] [ $+ [ 3 ] ],2,33)))
+            }
+            if ($gettok($remove($1,:),2,33) != $null) {
+              pushbuff $sockname $+(kick $sock($sockname).mark $remove($gettok($1,1,33),:) :Passport Flood Detected,$lf,access $sock($sockname).mark add deny $gettok($remove($1,:),2,33))
+            }
+          }
+          elseif (%pjoin. [ $+ [ $sock($sockname).mark ] ] > 4) && ($me isowner $remove($4,:)) || ($me isop $remove($4,:)) {
+            if ($gettok($remove($1,:),2,33) != $null) {
+              pushbuff $sockname $+(kick $sock($sockname).mark $gettok($remove($1,:),1,33) :Passport Flood Detected,$lf,access $sock($sockname).mark add deny $gettok($remove($1,:),2,33))
+            }
+          }
+        }
+      }
+    }
+  }
+  elseif ($2 == QUIT) {
+    set -u1 %quit. [ $+ [ $remove($1,:) ] ] $sock($sockname).mark $remove($3-,:)
+    sockwrite -tn Local $1 PART $sock($sockname).mark
+  }
+  elseif ($2 == 821) {
+    sockwrite -tn Local $1-2 : $+ $sock($sockname).mark $right($3-,-1)
+  }
+  elseif ($2 == 822) {
+    sockwrite -tn Local $1-2 : $+ $sock($sockname).mark $right($3-,-1)
+  }
+  elseif ($2 == 305) {
+    sockwrite -tn Local $1-3 $sock($sockname).mark $4-
+  }
+  elseif ($2 == 306) {
+    sockwrite -tn Local $1-3 $sock($sockname).mark $4-
+  }
+  elseif ($2 == NOTICE) {
+    if (tk2chatchata0 isin $remove($gettok($1,1,33),:)) { halt }
+    else sockwrite -tn Local $1-
+  }
+  elseif ($2 == KILL) {
+    set -u1 %kill. [ $+ [ $remove($1,:) ] ] $sock($sockname).mark
+    sockwrite -tn Local $1 KICK $sock($sockname).mark $3 :Kill
+  }
+  elseif ($2 == PROP) && ($4 == OWNERKEY) { set %key. [ $+ [ $3 ] ] $remove($5,:) }
+  elseif ($2 == PROP) && ($4 == HOSTKEY) { set %hkey. [ $+ [ $3 ] ] $remove($5,:) }
+  elseif ($2 == 332) { sockwrite -tn Local $1-4 $replace($remove($5,$chr(37)),\b,$chr(32)) $6- }
+  elseif ($2 == 403) {
+    .timerkeepfinds $+ $sockname off
+    .timerchecksck $+ $sockname off 
+    sendlookups FINDS $sock($sockname).mark
+    sockclose $sockname 
+  }
+  elseif ($2 == 353) {
+    var %result,%z = 1,%names = $remove($6-,:)
+    while (%z <= $numtok(%names,32)) {
+      %result = %result $gettok($gettok(%names,%z,32),4,44)
+      inc %z
+    }
+    sockwrite -tn Local $1-5 $+(:,%result)
+  }
+  elseif ($2 == PRIVMSG) {
+    if ($4 == :S) {
+      sockwrite -tn Local $1-3 $+(:,,$convertcolour($5),,$left($6-,-1))
+    }
+    elseif (: $+ $chr(1) isin $4) && (ACTION !isin $4) {
+      echo $sock($sockname).mark $str( ,6) 14-> $upper($mid($gettok($4,2,1),1,1)) $+ $lower($right($gettok($4,2,1),-1)) Ctcp request from $remove($gettok($1,1,33),$chr(58))
+      if (%ctcpflood != true) {
+        set -u5 %ctcpflood true
+        if ($getterminal(mode) == Terminal) {
+          if ($gettok($4,2,1) == VERSION) { .ctcpreply $remove($gettok($1,1,33),$chr(58)) VERSION 15T14erminal 1.5 by Sky }
+        }
+        elseif ($getterminal(mode) == Stealth) {
+          if ($gettok($4,2,1) == TIME) { .ctcpreply $remove($gettok($1,1,33),$chr(58)) TIME $date(dd/mm/yyyy) $+ , $time(h:nn:ss TT) }        
+          if ($gettok($4,2,1) == PING) { sockwrite -tn Local $1- }
+        }
+      }
+    }
+
+    elseif ($4 != :S) {
+      sockwrite -tn Local $chr(32) $+ $1-
+    }
+  }
+  elseif ($2-5 == 818 $me $me MSNPROFILE) { halt }
+  elseif ($2 == 914) { halt }
+  else {
+    if ($1 != AUTH) && ($2 !isin 001 002 003 004 375 372 422 265 266 255 254 253 252 251 800) {
+      sockwrite -tn Local $1-
+    }
+  }
+}
+;Terminal by Sky
+
+;Alias's
+
+;;;;;;;Script Settings;;;;;;
+
+alias GetScript {
+  if ($$1 == name) { return Terminal }
+  elseif ($$1 == version) { return 1.5 }
+  elseif ($$1 == creation) { return 30th April 2004 }
+  elseif ($$1 == maker) { return Sky }
+  elseif ($$1 == type) { return Parallex 6sck Non-OCX }
+  else return Invalid Call.
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;effects;;
+
+on ^*:NICK:{ 
+  if ($newnick == $me) { haltdef } 
+  else { return }
+}
+
+;;end effects;;
+
+alias tkey { return Termimal- $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) $+ $chr($rand(120,130)) }
+alias getport {
+  var %port
+  :loop
+  %port = $rand(1000,9999)
+  if (!$portfree(%port)) goto loop
+  return %port
+}
+
+
+alias updateme {
+  var %y = $iif($getterminal(TerminalVersion) == $null,Terminal,$getterminal(TerminalVersion))
+  if ($int(%y) > 0) { %y = T $+ %y }
+  var %x = %y - Lookups Connections $replace($sock(nav.*,0),5,Complete) - Channel Connections $sock(chan.*,0) - Channels $chan(0)
+  if ($titlebar != %x) {
+    titlebar %x 
+  }
+}
+
+alias away {
+  sockwrite -tn chan.* AWAY $iif($1- == $null,:Away,: $+ $1-)
+}
+
+alias back {
+  sockwrite -tn chan.* AWAY
+}
+
+alias gnr {
+  var %i = 1 
+  while (%i <= $chan(0)) {
+    if ($1 !ison $chan(%i)) { echo -a $1 is not on $chan(%i) }
+    inc %i 
+  }
+}
+
+alias amsg {
+  var %i = 1 
+  while (%i <= $chan(0)) {
+    msg $chan(%i) $1-
+    inc %i
+  }
+}
+
+alias resck {
+  if ($+($chr(37),$chr(35)) isin $1) { sockclose $hget(channels,$1) }
+  elseif ($+($chr(37),$chr(35)) isin $active) { sockclose $hget(channels,$active) }
+}
+
+alias local {
+  socklisten LLocal $getport
+  server localhost $sock(LLocal).port
+}
+
+alias imsn {
+  initnav
+  initchan
+}
+
+alias convertcolour {
+  var %colour
+  if ($mid($1,1,1) != \) { 
+    var %c = $asc($mid($1,1,1))
+    if (%c == 1) { %colour = 1 }
+    if (%c == 2) { %colour = 1 }
+    if (%c == 3) { %colour = 5 }
+    if (%c == 4) { %colour = 3 }
+    if (%c == 5) { %colour = 2 }
+    if (%c == 6) { %colour = 8 }
+    if (%c == 7) { %colour = 6 }
+    if (%c == 8) { %colour = 10 }
+    if (%c == 9) { %colour = 15 }
+    if (%c == 11) { %colour = 4 }
+    if (%c == 12) { %colour = 9 }
+    if (%c == 14) { %colour = 8 }
+    if (%c == 15) { %colour = 13 }
+    if (%c == 16) { %colour = 11 }
+  }
+  elseif ($mid($1,1,1) == \) {
+    if ($mid($1,1,2) == \n) { %colour = 14 }
+    elseif ($mid($1,1,2) == \r) { %colour = 12 }
+    else { %colour = 1 }
+  }
+  return %colour
+}
+
+alias TKIdent {
+  var %TKIdent = TK2CHATCHATA0 $+ $calc($left($gettok($1,4,46),3)-156)
+  return %TKIdent
+}
+
+alias TrackTK {
+  var %i = 1
+  while (%i <= $sock(*,0)) {
+    if ($left($sock(*,%i),5) == chan.) {
+      echo -a $tkident($sock(*,%i).ip) - $sock(*,%i) - $sock(*,%i).mark - $sock(*,%i).ip
+    }
+    inc %i
+  }
+}
+
+alias chanhash return $+(chan.,$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z),$rand(a,z))
+
+alias ShowDebug {
+  if ($group(#debug) == on) && ($window(@debug) == @debug) {
+    echo @debug $1-
+  }
+  elseif ($group(#debug) == on) && (!$window(@debug)) {
+    window -n @debug 
+    echo @debug $1-
+  }
+}
+alias showerror {
+  if ($sock(Local).status == active) {
+    sockwrite -tn Local :Error NOTICE $me : $+ $1-
+  }
+  else { msn }
+  activeerr
+  return $null
+}
+
+alias conmessage {
+  if ($sock(Local).status == active) {
+    sockwrite -tn Local : $+ $getscript(name) NOTICE $me : $+ $1-
+  }
+  else { msn }
+  return $null
+}
+alias warningmessage {
+  if ($sock(Local).status == active) {
+    sockwrite -tn Local :Warning NOTICE $me : $+ $1-
+  }
+  else { msn }
+  return $null
+}
+;;;CORE CODE;;;
+;MSN OCX Source Code Converted to mIRC code -- Thanks to sid.
+
+;NEW
+; // ocx.mrc - original code by sid
+
+alias passportInitPackage {
+
+  ; // returns the initial passport AUTH package
+
+  return $+( IRCVERS IRC8 MSNTV-TELCO, $crlf, AUTH GateKeeperPassport I :GKSSP\0\0\0, $chr(2), \0\0\0, $chr(1), \0\0\0 )
+} 
+
+alias guestInitPackage {
+
+  ; // returns the initial guest AUTH package
+
+  return $+( AUTH GateKeeper I :GKSSP\0\0\0, $chr(2), \0\0\0, $chr(1), \0\0\0, $crlf, IRCVERS IRC8 MSNTV-TELCO  )
+}
+
+alias authPackageS {
+
+  ; // returns the second AUTH package of the sequence
+
+  return $+( AUTH 0 S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+}
+
+; // constructor
+
+alias -l ocx {
+
+  ; // initialises values
+
+  if ( !$hget(ocx).size ) {
+    ; // if the table doesn't exist - make it
+
+    .hmake ocx 100
+  }
+}
+
+; // global functions
+
+alias ocxMD {
+
+  ; // digests a string in md5 encryption with the OCX's two keys
+  ; // ( ascii string ) : ascii string
+
+  var %string
+  %string = $$1
+  %string = $escBin(%string)
+
+  var %max
+  %max = $numtok( %string, 32 )
+  %string = $gettok( %string, $+( $calc( %max - 7 ), - %max ), 32 )
+  %string = $keyOne %string
+  bset &md5 1 %string
+  %string = $md5( &md5, 1 )
+  %string = $hexToBin(%string)
+  %string = $keyTwo %string
+  bset &md5 1 %string
+  %string = $md5( &md5, 1 )
+  %string = $hexToBin( %string, 1 )
+  return %string
+}
+
+; // global constants
+
+alias -l ascToHex {
+
+  ; // turns ascii into hex
+  ; // ( ascii string, OPTIONAL escapeCharacters = 0 ) : hex string
+
+  var %string, %esc
+  %string = $$1
+  %esc = $2
+
+  var %counter, %length, %character, %hex
+  %counter = 1
+  %length = $len(%string)
+  %hex = ""
+
+  if ( %esc ) {
+    ; // process escape characters
+
+    while ( %counter <= %length ) {
+      %character = $asc($mid( %string, %counter, 1 ))
+      if ( %character == 92 ) {
+        ; // if it's an escape character
+
+        %character = $mid( %string, %counter, 2 )
+        if ( %character == \0 ) {
+          ; // null character - 00 
+
+          %hex = $+( %hex, 00 ) 
+        }
+        elseif ( %character == \t ) {
+          ; // tab character - 09
+
+          %hex = $+( %hex, 09 )
+        }
+        elseif ( %character == \n ) {
+          ; // newline character - 10
+
+          %hex = $+( %hex, 0A )
+        }
+        elseif ( %character == \r ) {
+          ; // carriage return character - 13
+
+          %hex = $+( %hex, 0D )
+        }
+        elseif ( %character == \b ) {
+          ; // space character - 20
+
+          %hex = $+( %hex, 20 )
+        } 
+        elseif ( %character == \c ) { 
+          ; // comma character - 2C
+
+          %hex = $+( %hex, 2C ) 
+        } 
+        elseif ( %character == \\ ) {
+          ; // backslash character - 5C
+
+          %hex = $+( %hex, 5C )
+        }
+        inc %counter 2
+      }
+      else {
+        ; // if it's a normal character
+
+        %hex = $+( %hex, $base( %character, 10, 16 ) )
+        inc %counter
+      }
+    }
+    return %hex
+  }
+
+  else {
+    ; // don't process escape characters
+
+    while ( %counter <= %length ) {
+      %character = $asc($mid( %string, %counter, 1 ))
+      %hex = $+( %hex, $base( %character, 10, 16 ) )
+      inc %counter 
+    }
+    return %hex
+  }
+}
+
+alias -l hexToAsc {
+
+  ; // turns hex into ascii with escape characters
+  ; // ( hex string ) : ascii string
+
+  var %string
+  %string = $$1
+
+  var %counter, %length, %character, %asc
+  %counter = 1
+  %length = $len(%string)
+  %asc = ""
+
+  while ( %counter <= %length ) {
+    %character = $mid( %string, %counter, 2 )
+    if ( %character == 00 ) {
+      ; // null character - \0
+
+      %asc = $+( %asc, \0 )
+    }
+    elseif ( %character == 09 ) {
+      ; //tab character - \t 
+
+      %asc = $+( %asc, \t )
+    }
+    elseif ( %character == 0A ) {
+      ; // newline character - \n 
+
+      %asc = $+( %asc, \n )
+    }
+    elseif ( %character == 0D ) {
+      ; // carriage return character - \r 
+
+      %asc = $+( %asc, \r )
+    }
+    elseif ( %character == 20 ) {
+      ; // space character - \b 
+
+      %asc = $+( %asc, \b )
+    }
+    elseif ( %character == 2C ) {
+      ; // comma character - \c
+
+      %asc = $+( %asc, \c )
+    }
+    elseif ( %character == 5C ) {
+      ; // backslash character - \\
+
+      %asc = $+( %asc, \\ )
+    }
+    else {
+      ; // normal character
+
+      %asc = $+( %asc, $chr($base( %character, 16, 10 )) )
+    }
+    inc %counter 2
+  }
+  return %asc
+}
+
+alias -l bin {
+
+  ; // turns an ascii string into a binary string
+  ; // ( ascii string ) : binary string
+
+  var %string
+  %string = $$1 
+
+  var %counter, %length, %bin, %character
+  %counter = 1
+  %length = $len(%string)
+  %bin = ""
+
+  while ( %counter <= %length ) {
+    %character = $asc($mid( %string, %counter, 1 ))
+    if ( %character == 92 ) {
+      ; // if it's an escape character
+
+      %character = $mid( %string, %counter, 2 )
+      if ( %character == \0 ) {
+        ; // null character - 0
+
+        %bin = %bin 0
+      }
+      elseif ( %character == \t ) {
+        ; // tab character - 9
+
+        %bin = %bin 9
+      }
+      elseif ( %character == \n ) {
+        ; // newline character - 10 
+
+        %bin = %bin 10
+      }
+      elseif ( %character == \r ) {
+        ; // carriage return character - 13
+
+        %bin = %bin 13
+      }
+      elseif ( %character == \b ) {
+        ; // space character - 32
+
+        %bin = %bin 32
+      }
+      elseif ( %character == \c ) {
+        ; // comma character - 44 
+
+        %bin = %bin 44
+      }
+      elseif ( %character == \\ ) {
+        ; // backslash character - 92
+
+        %bin = %bin 92
+      }
+      inc %counter 2
+    }
+    else { 
+      ; // if it's a normal character
+
+      %bin = %bin %character
+      inc %counter
+    }
+  }
+  return %bin
+}
+
+alias -l hexToBin {
+
+  ; // converts hex to a binary string
+  ; // ( hex, OPTIONAL escapeCharacter = 0 ) : bin
+
+  var %string, %esc
+  %string = $$1
+  %esc = $2
+
+  var %counter, %length, %character, %bin
+  %counter = 1
+  %length = $len(%string)
+  %bin = ""
+
+  if ( %esc ) { 
+    ; // include escape characters
+
+    while ( %counter <= %length ) {
+      %character = $mid( %string, %counter, 2 )
+
+      if ( %character == 00 ) {
+        ; // null character - \0
+
+        %bin = %bin 92 48
+      }
+      elseif ( %character == 09 ) { 
+        ; // tab character - \t 
+
+        %bin = %bin 92 116
+      }
+      elseif ( %character == 0A ) { 
+        ; // newline character - \n
+
+        %bin = %bin 92 110
+      }
+      elseif ( %character == 0D ) { 
+        ; // tab character - \r
+
+        %bin = %bin 92 114 
+      }
+      elseif ( %character == 20 ) { 
+        ; // space character - \b
+
+        %bin = %bin 92 98
+      }
+      elseif ( %character == 2C ) { 
+        ; // comma character - \c 
+
+        %bin = %bin 92 99
+      }
+      elseif ( %character == 5C ) { 
+        ; // backspace character - \\
+
+        %bin = %bin 92 92 
+      }
+      else {
+        ; // normal character
+
+        %bin = %bin $base( %character, 16, 10 )
+      }
+      inc %counter 2
+    }
+    return %bin
+  }
+
+  else {
+    ; // don't include escape characters
+
+    while ( %counter <= %length ) {
+      %character = $mid( %string, %counter, 2 )
+      %bin = %bin $base( %character, 16, 10 )
+      inc %counter 2
+    }
+    return %bin
+  }
+}
+
+alias -l escBin {
+
+  ; // replaces escape characters in a binary ascii string with normal ascii values
+  ; // ( binary string ) : bin
+
+  var %string
+  %string = $$1
+
+  bset &string 1 %string
+  bset &bin 1 0 0 0 0 0 0 0 0
+
+  var %counter, %length, %character, %bpos
+  %counter = 1
+  %length = $bvar( &string, 0 )
+  %bpos = 1
+
+  while ( %counter <= %length ) {
+    %character = $bvar( &string, %counter )
+
+    if ( %character == 92 ) {
+      ; // if it's an escape character
+
+      %character = $bvar( &string, $calc( %counter + 1 ) )
+      if ( %character = 48 ) {
+        ; // null character - 0
+
+        bset &bin %bpos 0
+      }
+      elseif ( %character == 116 ) {
+        ; // tab character - 9
+
+        bset &bin %bpos 9
+      }
+      elseif ( %character == 110 ) {
+        ; // newline character - 10
+
+        bset &bin %bpos 10
+      }
+      elseif ( %character == 114 ) {
+        ; // carriage return character - 13
+
+        bset &bin %bpos 13
+      }
+      elseif ( %character == 98 ) {
+        ; // space character - 32
+
+        bset &bin %bpos 32
+      }
+      elseif ( %character == 99 ) {
+        ; // comma character - 44
+
+        bset &bin %bpos 44
+      }
+      elseif ( %character == 92 ) {
+        ; // backspace character - 92
+
+        bset &bin %bpos 92
+      }
+      inc %counter 2 
+    }
+    else {
+      ; // if it's not an escape character
+
+      bset &bin %bpos %character
+      inc %counter
+    }
+    inc %bpos
+  }
+  %length = $bvar( &bin, 0 )
+  return $bvar( &bin, 1, %length )  
+}
+
+; // local constants
+
+alias -l keyOne {
+
+  ; // returns the first key
+
+  return 101 100 112 123 125 101 124 119 120 114 100 115 101 125 125 117 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54 54
+}
+
+alias -l keyTwo {
+
+  ; // returns the second key
+
+  return 15 14 26 17 23 15 22 29 18 24 14 25 15 23 23 31 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92
+}
+
+; // attribute methods
+
+; // main attribute access methods
+
+alias -l set_ { .hadd ocx $$1 $$2 }
+alias -l get_ { return $hget( ocx, $$1 ) }
+
+
+; // end script
+
+alias -l GateClone {
+  var %i, %o, %int, %c
+  %i = $1-
+  %i = $left( %i, 32 )
+  %i = $+( $str( 0, $calc( 32 - $len( %i ) ) ), %i )
+  %i = $+( $mid( %i, 7, 2 ), $mid( %i, 5, 2 ), $mid( %i, 3, 2 ), $mid( %i, 1, 2 ), $mid( %i, 11, 2 ), $mid( %i, 9, 2 ), $mid( %i, 15, 2 ), $mid( %i, 13, 2 ), $mid( %i, 17 ) )
+  %i = $iif( %i == $str( 0, 32 ), $+( $str( 0, 31 ), 1 ), %i ) 
+  %int = 1
+  while ( %int <= $len(%i) ) { 
+    %c = $mid( %i, %int, 2 ) 
+    %o = $+( %o, $toEscNum( , $mid( %i, %int, 2 ) ) )
+    inc %int 2
+  }
+  return %o
+}
+alias -l toEscNum {
+  var %in 
+  %in = $$2 
+  %in = $iif( $1, $base( %in, $1, 10 ), $base( %in, 16, 10 ) )
+  if ( %in == 0 ) { return \0 }
+  elseif  ( %in == 9 ) { return \t }
+  elseif ( %in == 10 ) { return \n }
+  elseif ( %in == 13 ) { return \r }
+  elseif ( %in == 32 ) { return \b }
+  elseif ( %in == 44 ) { return \c }
+  elseif ( %in == 92 ) { return \\ }
+  else { return $chr(%in) }
+}
+alias binary { 
+  var %binary
+  var %i = 1
+  while (%i <= 16) {
+    %binary = $+(%binary,$iif($rand(1,0) == 0,\0,$chr(1)))
+    inc %i
+  }
+  return %binary
+}
+alias getauth {
+  if ($1 == 1) { return $binary }
+  if ($1 == 2) { return }
+  if ($1 == 3) { return }
+  if ($1 == 4) { return } 
+  if ($1 == 5) { return }
+  if ($1 == 6) { return $GateClone($getterminal(Clone)) }
+}
+alias binexample {
+  var %binary, %i = 1
+  while (%i <= 32) {
+    %binary = $+(%binary,$rand(0,1))
+    inc %i
+  }
+  return %binary
+}
+alias -l hex { return $base( $$1, 10, 16 ) }
+alias -l rHex { return $hex($r( 0, 15 )) }
+alias hexString { return $+( $rHex, $rHex, $rHex, $rHex, $rHex, $rHex, $rHex, $rHex ) }
+
+alias -l hash { return $MD5($hexString) }
+
+alias -l guestform {
+  return $mid($1,7,2) $+ $mid($1,5,2) $+ $mid($1,3,2) $+ $left($1,2) $+ $mid($1,11,2) $+ $mid($1,9,2) $+ $mid($1,15,2) $+ $mid($1,13,2) $+ $right($1,16)
+}
+alias -l passform return $base($len($$1),10,16,8) $+ $1 $+ $base($len($$2),10,16,8) $+ $2
+
+;end commands
+
+on *:START:{
+  .timerbarstat -m 0 10 updateme
+  local
+  splay tab.wav
+  if ($group(#autoupdate) == on) {
+    .timerupdate 0 3600 update
+  }
+
+}
+
+;Groups
+
+#Debug on
+#Debug end
+
+;Sockets
+
+alias resck {
+  sockclose $hget(channels,$$1)
+}
+
+alias initstream {
+  .timersockstream. $+ $1 -m 0 130 checkbuff $1
+}
+alias sendstream {
+  sockwrite -tn $1 $2-
+}
+alias send {
+  pushbuff $1 $2-
+}
+alias PushBuff {
+  ;Format = Sockname, Sockdata
+  if ($hget(BCOUNT. $+ $1,$1) == -1) { hinc BCOUNT. $+ $1 $1 }
+  hinc -m BCOUNT. $+ $1 $1
+  hadd -m BUFF. $+ $1 $hget(BCOUNT. $+ $1,$1) $2-
+}
+alias checkbuff {
+  ;Format = Sockname
+  if ($hget(BCOUNT. $+ $1,$1) == -1) { halt }
+  elseif ($hget(BCOUNT. $+ $1,$1) > -1) { 
+    if ($sock($1).status == active) {
+      sockwrite -tn $1 $popbuff($1)
+    }
+    elseif ($sock($1).status != connecting) { $clearbuff($1) }
+  }
+}
+alias clearbuff {
+  ;Format = Sockname
+  var %i = 1
+  var %max = $hget(BCOUNT. $+ $1,$1)
+  while (%i <= %max) {
+    hdel BUFF. $+ $1 %i
+    inc %i
+  }
+  hdel BCOUNT. $+ $1 $1
+}
+alias PopBuff {
+  ;Format = Sockname
+  var %max = $hget(BCOUNT. $+ $1,$1)
+  var %i = 1
+  var %data = $hget(BUFF. $+ $1,1)
+  while (%i <= %max) {
+    hadd BUFF. $+ $1 %i $hget(BUFF. $+ $1,$calc(%i + 1))
+    inc %i
+  } 
+  hdec -m BCOUNT. $+ $1 $1
+  return %data
+}
+;   Socket Buffer End
+alias grabnav {
+  hinc -m Send Lookups
+  if ($hget(Send,Lookups) > 5) { hadd -m Send Lookups 1 }
+  return NAV. $+ $hget(Send,Lookups)
+}
+alias sendlookups {
+  send $grabnav $1-
+}
+
+on *:socklisten:LLocal:{
+  sockaccept Local
+  sockclose LLocal
+  clear $active
+  sockwrite -tn Local : $+ $getscript(name) 001 $me :Welcome to the $getscript(name) Connection.
+  sockwrite -tn Local : $+ $getscript(name) 002 $me :Connection Type: $getscript(type)
+  sockwrite -tn Local : $+ $getscript(name) 003 $me : $+ $getscript(name) vers 1.5
+  sockwrite -tn Local : $+ $getscript(name) 004 $me : $+ $getscript(name) aioxz abcdefhiklmnoprstuvxyz
+  sockwrite -tn Local : $+ $getscript(name) 800 $me 1 0 GateKeeper,NTLM 512
+  sockwrite -tn Local : $+ $getscript(name) NOTICE $me :Created by $getscript(maker)
+  sockmark Local Local Connection
+  if ($sock(nav.*).status != active) { imsn }
+}
+
+on *:sockread:Local:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if ($1 == NICK) { sockwrite -tn $sockname : $+ $me NICK $2 | sockclose chan.* }
+  if ($1 == MODE) && (- isin $3 || + isin $3) && ($4) && (b isin $3) { 
+    var %i = 1,%max = $calc($len($3)),%mode
+    while (%i <= %max) {
+      if ($mid($3,%i,1) == +) { %mode = - }
+      elseif ($mid($3,%i,1) == -) { %mode = + }
+      else {
+        if (%mode == -) {
+          if ($gettok($4-,%i,32) != $null) {
+            access $2 delete deny $gettok($4-,%i,32)
+          }
+        }
+        elseif (%mode == +) {
+          if ($gettok($4-,%i,32) != $null) {
+            access $2 add deny $gettok($4-,%i,32)
+          }
+        }
+      }
+      inc %i
+    }
+  }
+  elseif ($1 == MODE) && ($2 == $me) { sockwrite -tn $hget(channels,$active) $1- }
+  elseif ($1 == FINDU) { sendlookups $1- }
+  elseif ($1 == INVITE) && ($sock($hget(channels,$2)).status == active) {
+    sockwrite -tn $hget(channels,$2) $1 $3
+  }
+  elseif ($1 == JOIN) {
+    if ($sock($hget(channels,$2)).status == active) {
+      send $hget(channels,$2) $1-
+    }
+    elseif ($sock($hget(channels,$2)).status != active) && ($sock(nav.*).status == active) {
+      set %join $2- 
+      sendlookups FINDS $2- 
+    }
+    elseif ($sock(nav.*).status != active) {
+      initnav
+    }
+  }
+  elseif ($1 == PART) {
+    if ($numtok($2-,44) > 0) {
+      var %i = 1
+      while (%i <= $numtok($2-,44)) {
+        send $hget(channels,$gettok($2-,%i,44)) part $gettok($2-,%i,44)
+        inc %i
+      }
+    }
+    else { send $hget(channels,$2) part $2 }
+  }
+  elseif ($+($chr(37),$chr(35)) isin $2) { send $hget(channels,$2) $1- }
+  elseif ($hget(channels,$2)) { send $hget(channels,$2) $1- }
+  elseif ($comchan($2,1) != $null) { sockwrite -tn $hget(channels,$comchan($2,1)) $1- }
+  showdebug 2<Input> 10 $+ $1-
+}
+
+alias getsckchan {
+  var %i = 1
+  while (%i <= $sock(*,0)) {
+    if ($sock(*,%i).mark == $1) { return $sock(*,%i) }
+    inc %i
+  }
+}
+
+on *:sockopen:nav.*:{ 
+  initstream $sockname
+  .timerkeepfinds $+ $sockname 0 15 keepfinds $sockname $sock($sockname).ip $sock($sockname).port
+  .timerchecksck $+ $sockname -m 0 10 checksocket $sockname $sock($sockname).ip $sock($sockname).port
+  if ($sock($sockname).status == active) {
+    sockwrite -tn $sockname NICK $iif(> isin $me,>,$null) $+ $remove($me,>)
+    sockwrite -n $sockname $+( IRCVERS IRC $+ $getterminal(ircvers) MSNTV-TELCO!Terminal, $crlf, AUTH GateKeeper $+ $iif(> !isin $me,Passport,$null) I GKSSP\0, $chr(1), r, $chr(2), \0\0\0, $chr(1), \0\0\0 )
+  }
+}
+
+alias keepfinds {
+  if (($sock($$1).status != active) && ($sock($$1).status != connecting)) {
+    sockopen $1-
+  }
+  elseif ($sock($$1).status == active) {
+    sockwrite -tn $1
+  }
+}
+
+alias checksocket {
+  if (($sock($$1).status != active) && ($sock($$1).status != connecting)) {
+    sockopen $1-
+    sockmark $1 $hget(ext,$1)
+  }
+}
+
+
+on *:sockread:nav.*:{
+  sockread -n &read
+  var %data = $bvar(&read,1,$bvar(&read,0)).text
+  tokenize 32 %data 
+  showdebug 2< $+ $sockname $+ > 10 $+ $1-
+  if (AUTH GateKeeperPassport S isin $1-) { 
+    if ((!%ticket) || (!%profile)) {
+      .timerkeepfinds $+ $sockname off
+      .timerchecksck $+ $sockname off
+      showerror Socket $sockname has been closed due to absense of passport info.
+      sockclose $sockname
+    }
+    var %max, %string
+    %max = $bvar( &read, 0 )
+    %max = %max - 2
+    %string = $bvar( &read, $calc( %max - 16 ), 17 )
+    %string = $ocxMd(%string)
+    bset &auth 1 %string
+    sockwrite $sockname $+( AUTH GateKeeper S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+    sockwrite $sockname &auth
+    sockwrite $sockname $crlf
+    if ($sock($sockname).status == active) {
+      sockwrite -tn $sockname AUTH GateKeeperPassport S : $+ $passform(%ticket,%profile)
+      if (%sinfo != $null) && ($sock($sockname).status == active) {
+        sockwrite -tn $sockname PROP $ SUBSCRIBERINFO $+(:,%sinfo)
+      }
+      elseif (%sinfo == $null) {
+        showerror $sockname Warning. Your passport is not subscribed or you do not have any subscriber info presant.
+      }
+    }
+  }
+  elseif (AUTH GateKeeper S isin $1-) && ($4 != :OK) {
+    var %max, %string
+    %max = $bvar( &read, 0 )
+    %max = %max - 2
+    %string = $bvar( &read, $calc( %max - 16 ), 17 )
+    %string = $ocxMd(%string)
+    bset &auth 1 %string
+    sockwrite $sockname $+( AUTH GateKeeper S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+    sockwrite $sockname &auth
+    sockwrite $sockname $+($getauth($getterminal(AddressType)),$crlf)
+  }
+  elseif ($1-3 == AUTH GateKeeper *) {
+    var %allk,%sck = 1
+    while (%sck <= 5) {
+      %allk = $+(%allk,$sock(nav. [ $+ [ %sck ] ]).status)
+      inc %sck
+    }
+    if (%allk == $str(active,5)) {
+      if (%sok != true) {
+        conmessage Lookups Connections Fully Established. ( $+ $4 $+ )
+        set -u5 %sok true
+      }
+    }
+    else {
+      unset %sok
+    }
+  }
+  elseif ($1-3 == AUTH GateKeeperPassport *) {
+    var %allk,%sck = 1
+    while (%sck <= 5) {
+      %allk = $+(%allk,$sock(nav. [ $+ [ %sck ] ]).status)
+      inc %sck
+    }
+    if (%allk == $str(active,5)) {
+      if (%sok != true) {
+        conmessage Lookups Connections Fully Established. ( $+ $4 $+ )
+        set -u5 %sok true
+      }
+    }
+    else {
+      unset %sok
+    }
+  }
+  elseif ($2 == 908) { sockclose $sockname }
+  elseif ($2 == 641) { sockwrite -tn Local : $+ $getscript(name) 811 $me :Start of ListX | sockwrite -tn Local $1- }
+  elseif ($2 == 642) { sockwrite -tn Local : $+ $getscript(name) 812 $me $6 +nt 0 0 : $+ $4 $+(   ,   ) $5 | sockwrite -tn Local $1- }
+  elseif ($2 == 643) { sockwrite -tn Local : $+ $getscript(name) 817 :End of /LISTX | sockwrite -tn Local $1- }
+  elseif ($2 == 613) { sockwrite -tn $tkident($remove($4,:)) JOIN %join }
+  elseif ($2 == 702) {
+    set %key. [ $+ [ %join ] ] $rand(10000,99999)
+    set %createmode -
+    set %createsection EN-US
+    set %createcat CP
+    set %createtopic Terminal
+    sockwrite -tn $sockname CREATE %createcat %join %createtopic %createmode %createsection 1 %key. [ $+ [ %join ] ] 0
+  }
+  elseif ($2 == 910) {
+    conmessage Lookups Connections $sockname Dropped.
+    var %x = $sockname
+    inc -u10 %sockfail. [ $+ [ %x ] ]
+    if (%sockfail. [ $+ [ %x ] ] > 5) {
+      .timerkeepfindsnav.* off
+      .timercheckscknav.* off
+      sockclose nav.*
+      showerror $iif(> !isin $me,Your passport is possibly out of date. Please update and try again.,Guest Authentication has been frequently failing. This is either a co-incidence or MSN Has possibly updated. Please investigate into this issue.)
+    } 
+    elseif (%sockfail. [ $+ [ %x ] ] <= 5) {
+      var %sock = %x $sock(%x).ip $sock(%x).port
+      while ($sock(%x).status == active) {
+        sockclose %x
+      }
+      reopen $gettok(%sock,1,32) $gettok(%sock,2,32) $gettok(%sock,3,32)
+    }
+  }
+  else {
+    if ($1 != AUTH) && ($2 !isin 001 002 003 004 375 372) {
+      sockwrite -tn Local $1-
+    }
+  }
+}
+
+on *:sockopen:TK2CHATCHATA0?:{ 
+  initstream $sockname
+  .timerkeepfinds $+ $sockname 0 15 keepfinds $sockname $sock($sockname).ip $sock($sockname).port
+  .timerchecksck $+ $sockname -m 0 10 checksocket $sockname $sock($sockname).ip $sock($sockname).port
+  if ($sock($sockname).status == active) {
+    sockwrite -tn $sockname NICK $iif(> isin $me,>,$null) $+ $remove($me,>)
+    if (> !isin $me) { 
+      sockwrite -tn $sockname $passportInitPackage
+    }
+    elseif (> isin $me) {
+      sockwrite -tn $sockname $guestInitPackage
+    }
+  }
+}
+
+on *:sockopen:chan.?????:{ 
+  initstream $sockname
+  .timerkeepfinds $+ $sockname 0 15 keepfinds $sockname $sock($sockname).ip $sock($sockname).port
+  .timerchecksck $+ $sockname -m 0 10 checksocket $sockname $sock($sockname).ip $sock($sockname).port
+  if ($sock($sockname).status == active) {
+    sockwrite -tn $sockname NICK $iif(> isin $me,>,$null) $+ $remove($me,>)
+    if (> !isin $me) { 
+      sockwrite -tn $sockname $passportInitPackage
+    }
+    elseif (> isin $me) {
+      sockwrite -tn $sockname $guestInitPackage
+    }
+  }
+}
+
+alias getbvar {
+  var %i = 1
+  while (%i <= $len($1-)) {
+    bset &bnick 1 &bnick $asc($mid($1-,%i,1))
+    inc %i
+  }
+  return &bnick
+}
+
+alias getbin {
+  var %bvv
+  var %i = 1
+  while (%i <= $len($1-)) {
+    %bvv = %bvv $asc($mid($1-,%i,1))
+    inc %i
+  }
+  return %bvv 0 0
+}
+
+alias getnbin {
+  var %bvv
+  var %i = 1
+  while (%i <= $len($1-)) {
+    %bvv = %bvv $asc($mid($1-,%i,1))
+    inc %i
+  }
+  return %bvv
+}
+
+
+
+on *:sockread:TK2CHATCHATA0?:{
+  sockread -n &read
+  var %data = $bvar(&read,1,$bvar(&read,0)).text
+  tokenize 32 %data 
+  showdebug 2< $+ $sockname $+ > 10 $+ $1-
+  if (AUTH GateKeeperPassport S isin $1-) { 
+    if ((!%ticket) || (!%profile)) {
+      .timerkeepfinds $+ $sockname off
+      .timerchecksck $+ $sockname off
+      showerror Socket $sockname has been closed due to absense of passport info.
+      sockclose $sockname
+    }
+    var %max, %string
+    %max = $bvar( &read, 0 )
+    %max = %max - 2
+    %string = $bvar( &read, $calc( %max - 16 ), 17 )
+    %string = $ocxMd(%string)
+    bset &auth 1 %string
+    sockwrite $sockname $+( AUTH GateKeeper S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+    sockwrite $sockname &auth
+    sockwrite $sockname $+($crlf,AUTH GateKeeperPassport S : $+ $passform(%ticket,%profile),$crlf)
+  }
+  elseif (AUTH GateKeeper S isin $1-) && ($4 != :OK) {
+    var %max, %string
+    %max = $bvar( &read, 0 )
+    %max = %max - 2
+    %string = $bvar( &read, $calc( %max - 16 ), 17 )
+    %string = $ocxMd(%string)
+    bset &auth 1 %string
+    sockwrite $sockname $+( AUTH GateKeeper S GKSSP\0\0\0, $chr(2), \0\0\0, $chr(3), \0\0\0 ) 
+    sockwrite $sockname &auth
+    sockwrite $sockname $+($getauth($getterminal(AddressType)),$crlf)
+  }
+  elseif ($1-3 == AUTH GateKeeper *) {
+    sockwrite -tn $sockname USER $me * * :Terminal by Sky(Guest)
+    if ($sock($sockname).mark != $null) { sockwrite -tn $sockname JOIN $sock($sockname).mark }
+  }
+  elseif ($1-3 == AUTH GateKeeperPassport *) {
+    sockwrite $sockname $+(USER $me * * :Terminal by Sky(Passport),$lf,MODE $me +i,$lf,PROP $me MSNPROFILE :1,$crlf)
+    if (%sinfo) {
+      sockwrite -tn $sockname PROP $me SUBSCRIBERINFO $+(:,%sinfo)
+    }
+    elseif (!%sinfo) {
+      showerror $sockname Warning. Your passport is not subscribed or you do not have any subscriber info presant.
+    }
+    if ($sock($sockname).mark != $null) { sockwrite -tn $sockname JOIN $sock($sockname).mark }
+  }
+  elseif ($2 == 818) {
+    if ($+($chr(37),$chr(35)) isin $4) {
+      if ($5 == Creation) { sockwrite -tn Local $1-5 : $+ $date($remove($6,:)) }
+      else sockwrite -tn Local $1-
+    }
+  }
+  elseif ($2 == 924) { halt }
+  elseif ($2 == JOIN) && ($remove($gettok($1,1,33),:) == $me) { 
+    var %x = $chanhash
+    sockrename $sockname %x
+    hadd -m $remove($4,:) %x
+    sockmark %x $remove($4,:)
+    sockwrite -tn Local $1 $2 $4- 
+    .timerkeepfinds $+ $sockname 0 15 keepfinds %x $sock($sockname).ip $sock($sockname).port
+    .timerchecksck $+ $sockname -m 0 10 checksocket %x $sock($sockname).ip $sock($sockname).port 
+    initstream $sockname
+    sockwrite -tn %x MODE $remove($4,:)
+    if (F isin $gettok($3,3,44)) { hadd -m GENDER $remove($gettok($1,1,33),:) FEMALE }
+    elseif (M isin $gettok($3,3,44)) { hadd -m GENDER MALE }
+    else { hadd -m GENDER NEITHER }
+    ;if ($remove($gettok($1,1,33),:) == $me) { sockwrite -tn %x WHO $remove($4,:) }
+  }
+  elseif ($2-5 == 818 $me $me MSNPROFILE) { halt }
+  elseif ($2 == 910) {
+    conmessage Channel Connection $sockname Dropped.
+    var %x = $sockname
+    inc -u10 %sockfail. [ $+ [ %x ] ]
+    if (%sockfail. [ $+ [ %x ] ] > 5) {
+      .timerkeepfindsTK2CHATCHATA0* off
+      .timerchecksckTK2CHATCHATA0* off
+      sockclose TK2CHATCHATA0*
+      showerror $iif(> !isin $me,Your passport is possibly out of date. Please update and try again.,Guest Authentication has been frequently failing. This is either a co-incidence or MSN Has possibly updated. Please investigate into this issue.)
+    } 
+    elseif (%sockfail. [ $+ [ %x ] ] <= 5) {
+      var %sock = %x $sock(%x).ip $sock(%x).port
+      while ($sock(%x).status == active) {
+        sockclose %x
+      }
+      reopen $gettok(%sock,1,32) $gettok(%sock,2,32) $gettok(%sock,3,32)
+    }
+  }
+  else {
+    if ($1 != AUTH) && ($2 !isin 001 002 003 004 375 372 422 265 266 255 254 253 252 251 800) {
+      sockwrite -tn Local $1-
+    }
+  }
+}
+
+alias reopen {
+  sockopen $1 $2 $3
+}
+
+
+alias stabilize {
+  var %lookups = 141,142,144,145,184
+  var %x = 1
+  while (%x <= $numtok(%lookups,44)) {
+    if ($sock($+(NAV.,%x)).status != active) {
+      sockopen $+(NAV.,%x) $+(207.68.167.,$gettok(%lookups,%x,44)) 6667 
+    }
+    inc %x
+  }  
+  var %chanx = 157,158,159,160,161,162
+  var %y = 1
+  while (%y <= $numtok(%chanx,44)) {
+    if ($sock($+(TK2CHATCHATA0,%y)).status != active) {
+      sockopen $+(TK2CHATCHATA0,%y) $+(207.68.167.,$gettok(%chanx,%y,44)) 6667
+    }
+    inc %y
+  }
+}
+
+alias InitNav { 
+  sockclose nav.*
+  var %lookups = 141,142,144,145,184
+  var %x = 1
+  echo -s Connecting to Lookup Servers.
+  while (%x <= $numtok(%lookups,44)) {
+    sockopen $+(NAV.,%x) $+(207.68.167.,$gettok(%lookups,%x,44)) 6667 
+    inc %x
+  }
+}
+
+alias InitChan {
+  sockclose TK2CHATCHATA0*
+  var %chanx = 157,158,159,160,161,162
+  var %x = 1
+  while (%x <= $numtok(%chanx,44)) {
+    if ($sock($+(TK2CHATCHATA0,%x)).status != active) {
+      sockopen $+(TK2CHATCHATA0,%x) $+(207.68.167.,$gettok(%chanx,%x,44)) 6667
+    }
+    inc %x
+  }
+}
+
+on ^*:USERMODE:{
+  if ($1 == +i) && ($nick == $me) { haltdef }
+}
+
+;;;CORE CODE END;;;
+;Menus
+
+menu status,menubar {
+  $GetScript(name)
+  . $+ $iif($group(#debug) == on,$style(1),$style(0)) $+ Debug: $+ { $iif($group(#debug) == on,.disable #debug,.enable #debug) | echo -s Debug is now $group(#debug) }
+  .TVers $iif($getterminal(TerminalVersion) == $null,Terminal,$getterminal(TerminalVersion)) $+ : $+ { setterminal TerminalVersion $$?"Please enter in the numeric version" }
+  .Ircvers
+  ..$submenu($ircvers($1))
+  .GateKeeper
+  ..$submenu($gatemenu($1))
+  .Commands
+  ..Hunt User:{ hunt $$?"Please enter in the nickname you wish to hunt." }
+  ..Find User:{ hunt $$?"Please enter in the nickname you wish to hunt." }
+  ..Properties
+  ...Channel:{ sockwrite -tn TK2CHATCHATA0* PROP $$?"Please enter in the channel." * }
+  ...User:{
+    var %x = $$?"Please enter in the nickname." 
+    if ($sock($hget(channels,$comchan(%x,1))).status == active) { sockwrite -tn $hget(channels,$comchan(%x,1)) PROP %x * }
+    else echo -s Sorry you are not a channel with that specified user ( $+ %x $+ ) 
+  }
+  .Proxy
+  ..Configure:{ echo -s Coming soon. }
+  .Extra
+  .. $+ $iif($getterminal(passportflood) == on,$style(1),$null) $+ Passport Flood Protection:{ $iif($getterminal(passportflood) == on,setterminal passportflood off,setterminal passportflood on) }
+  .. $+ $iif($getterminal(guestflood) == on,$style(1),$null) $+ Guest Flood Protection:{ $iif($getterminal(guestflood) == on,setterminal guestflood off,setterminal guestflood on) }
+  .Sockets
+  ..Mode
+  ... $+ $iif($getterminal(mode) == Stealth,$style(1),$null) $+ Stealth:{ setterminal Mode Stealth }
+  ... $+ $iif($getterminal(mode) == Terminal,$style(1),$null) $+ Terminal:{ setterminal Mode Terminal }
+  ..Clear up:{ cus }
+  .Passport
+  ..Options:{ updategui }
+  ..Select
+  ...$submenu($selectaddy($1))
+  ..- 
+  ..Update:{ update }
+}
+
+menu channel {
+  $iif($len($replace($remove(#,$+($chr(37),$chr(35))),\b,$chr(32))) > 30,$mid($replace($remove(#,$+($chr(37),$chr(35))),\b,$chr(32)),1,30) $+ ...,$replace($remove(#,$+($chr(37),$chr(35))),\b,$chr(32)))
+  .Properties
+  ..Modes $remove($gettok($window($active).titlebar,2,32) $iif($gettok($window($active).titlebar,3,32) > 0,$gettok($window($active).titlebar,3,32),$null),$chr(58),$chr(91),$chr(93)) $+ : $+ clipboard $remove($gettok($window($active).titlebar,2,32) $iif($gettok($window($active).titlebar,3,32) > 0,$gettok($window($active).titlebar,3,32),$null),$chr(58),$chr(91),$chr(93))
+  ..Users $remove($gettok($window($active).titlebar,1,32),$chr(58),$chr(91),$chr(93)) $+ : $+ clipboard $remove($gettok($window($active).titlebar,1,32),$chr(58),$chr(91),$chr(93))
+  ..Owner $nick($active,0,q) $+ : $+ clipboard $nick($active,0,q)
+  ..Host $nick($active,0,o) $+ : $+ clipboard $nick($active,0,o)
+  ..Voice $nick($active,0,v) $+ : $+ clipboard $nick($active,0,v)
+  ..Spectator $nick($active,0,r) $+ : $+ clipboard $nick($active,0,r)
+  .Keys
+  ..CopyKeys
+  ...Ownerkey %key. [ $+ [ # ] ] $+ : $+ clipboard %key. [ $+ [ # ] ]
+  ...Hostkey %hkey. [ $+ [ # ] ] $+ : $+ clipboard %hkey. [ $+ [ # ] ]
+  ..UseKeys
+  ...Ownerkey %key. [ $+ [ # ] ] $+ : $+ mode $me +h %key. [ $+ [ # ] ]
+  ...Hostkey %hkey. [ $+ [ # ] ] $+ : $+ mode $me +h %hkey. [ $+ [ # ] ]
+  ..SetKeys
+  ...Ownerkey %key. [ $+ [ # ] ] $+ : $+ set %key. [ $+ [ # ] ] $$?"Please enter in a password."
+  ...Hostkey %hkey. [ $+ [ # ] ] $+ : $+ set %hkey. [ $+ [ # ] ] $$?"Please enter in a password."
+  .Link
+  ..Copy Normal:{ clipboard # }
+  ..Copy HTTP:{ clipboard http://chat.msn.com/chatroom.msnw?rm= $+ $remove($replace(#,$chr(32),%20),$chr(37),$chr(35)) }
+  ..Open HTTP:{ run iexplore.exe http://chat.msn.com/chatroom.msnw?rm= $+ $remove($replace(#,$chr(32),%20),$chr(37),$chr(35)) $+ &pgmarket=en-us }
+}
+
+alias cus {
+  var %i = 1
+  while (%i <= $sock(*,0)) {
+    if ($me !ison $sock(*,%i).mark) && ($chr(37) $+ $chr(35) isin $sock(*,%i).mark) {
+      .timerkeepfinds $+ $sock(*,%i) off
+      .timerchecksck $+ $sock(*,%i) off
+      .timersockstream. $+ $sock(*,%i) off
+      sockclose $sock(*,%i)
+    }
+    inc %i
+  }
+}
+
+alias ircvers {
+  if ($1 == begin) { return - }
+  if ($1 <= 8) { return $iif($getterminal(ircvers) == $1,$style(1),$null) IRC $+ $1 $+ :setterminal ircvers $1 }
+  if ($1 == end) { return - }
+}
+
+alias gatemenu {
+  if ($1 == begin) { return - }
+  if ($1 <= 5) { return $iif($getterminal(AddressType) == $1,$style(1),$null) $+ $getgateexample($1) $+ :setterminal AddressType $1 }
+  if ($1 == 6) { return $iif($getterminal(AddressType) == $1,$style(1),$null) $+ Clone $getterminal(Clone) $+ @GateKeeper: $+ $iif($getterminal(AddressType) == $1,settmadd,setterminal AddressType $1) }
+  if ($1 == end) { return - }
+}
+
+alias settmadd {
+  var %ddgate = $$?"Please enter in the Address excluding the Nickname"
+  if (Passport isin %ddgate) { $input(Sorry Passport Gates cannot be cloned.,4) | halt }
+  %ddgate = $remove(%ddgate,@GateKeeper,Passport)
+  setterminal Clone %ddgate
+  setterminal AddressType 6
+}
+
+alias GetGateExample {
+  if ($1 == 1) { return Binary $binexample $+ @GateKeeper }
+  if ($1 == 2) { return @GateKeeper }
+  if ($1 == 3) { return @GateKeeper }
+  if ($1 == 4) { return @GateKeeper } 
+  if ($1 == 5) { return @GateKeeper }
+}
+
+alias setterminal {
+  writeini Terminal.ini Settings $1 $2-
+}
+
+alias getterminal {
+  if ($exists(Terminal.ini)) {
+    return $readini(Terminal.ini,Settings,$1)
+  }
+}
+
+on *:LOAD:{
+  setterminal AddressType 1
+  setterminal ircvers 8  
+}
+
+;;;;;Updater by Sky;;;;;;
+
+dialog Updater {
+  title "Passport Updater"
+  size -1 -1 133 69
+  option dbu
+  combo 1, 2 4 129 44, size drop
+  edit "", 2, 31 20 99 9
+  text "Email", 3, 5 20 16 8
+  text "Password", 4, 4 33 25 8
+  edit "", 5, 31 33 99 9
+  button "Update/Add", 6, 3 45 38 10
+  check "Timed Update", 7, 85 45 46 10
+  button "Remove", 8, 45 45 37 10
+  button "OK", 9, 3 58 128 9, ok
+}
+
+alias updategui {
+  if (!$dialog(Updater).hwnd) {
+    dialog -m Updater Updater
+  }
+  else { dialog -v Updater }
+}
+
+on *:dialog:updater:init:*:{
+  did -a $dname 2 %account
+  did -a $dname 5 %password
+  updatepassports
+  if ($did($dname,2).text == $null || $did($dname,5).text == $null || @ !isin $did($dname,2).text || . !isin $did($dname,2).text)  {
+    did -b $dname 6
+    did -b $dname 8
+  }
+  else {
+    did -e $dname 6
+    did -e $dname 8
+  }
+  if ($timer(update)) && ($group(#autoupdate) == on) { did -c $dname 7 }
+}
+
+on *:dialog:updater:sclick:6:{
+  writeini Terminal.ini Accounts $did($dname,2).text $did($dname,5).text
+  set %account $did($dname,2).text
+  set %password $did($dname,5).text
+  updatepassports
+  update
+}
+
+#autoupdate on
+#autoupdate end
+
+alias updatepassports {
+  if ($dialog(Updater).hwnd) {
+    did -r updater 1 
+    var %i = 1 
+    while (%i <= $ini(Terminal.ini,Accounts,0)) {
+      did -a Updater 1 $ini(Terminal.ini,Accounts,%i)
+      inc %i
+    }
+    did -c Updater 1 $ini(Terminal.ini,Accounts,$did($dname,2).text)
+  }
+}
+
+on *:dialog:updater:sclick:8:{
+  remini Terminal.ini Accounts $did($dname,2).text
+  updatepassports
+}
+
+on *:dialog:updater:sclick:7:{
+  if ($did($dname,7).state == 1) {
+    .enable #autoupdate
+    .timerupdate 0 3600 update
+  }
+  elseif ($did($dname,7).state == 0) {
+    .disable #autoupdate
+    .timerupdate off    
+  }
+}
+
+on *:dialog:updater:sclick:1:{
+  did -r $dname 2
+  did -r $dname 5
+  did -a $dname 2 $did($dname,1).text
+  did -a $dname 5 $readini(Terminal.ini,Accounts,$did($dname,1).text)
+}
+
+on *:dialog:updater:edit:2:{
+  if ($did($dname,2).text == $null || $did($dname,5).text == $null || @ !isin $did($dname,2).text || . !isin $did($dname,2).text)  {
+    did -b $dname 6
+    did -b $dname 8
+  }
+  else {
+    did -e $dname 6
+    did -e $dname 8
+  }
+}
+
+on *:dialog:updater:edit:5:{
+  if ($did($dname,5).text == $null || $did($dname,2).text == $null || @ !isin $did($dname,2).text || . !isin $did($dname,2).text) {
+    did -b $dname 6
+    did -b $dname 8
+  }
+  else {
+    did -e $dname 6
+    did -e $dname 8
+  }
+}
+
+alias selectaddy {
+
+  if ($1 == begin) { return - }
+  if ($1 <= $ini(Terminal.ini,Accounts,0)) { return $iif($ini(Terminal.ini,Accounts,$1) == %account,$style(1),$null) $ini(Terminal.ini,Accounts,$1) $+ : $+ set $chr(37) $+ account $ini(Terminal.ini,Accounts,$1) | set $chr(37) $+ password $readini(Terminal.ini,Accounts,$ini(Terminal.ini,Accounts,$1)) }
+  if ($1 == end) { return - }
+
+}
+
+;;Socket updater by Sky;;
+
+alias update {
+  if (!%account) { set %account $$?"Please enter in your email." }
+  if (!%password) { set %password $$?"Please enter in your password." }
+  getinfo %account %password
+  set %udticks $ticks
+}
+
+alias -l getinfo {
+  if ($gettok(%account,2,64) == msn.com) {
+    sockopen update msnialogin.passport.com 80
+  }
+  elseif ($gettok(%account,2,64) == hotmail.com) {
+    sockopen update loginnet.passport.com 80
+  }
+  sockmark update $1 $2
+}
+
+on *:sockopen:update:{
+  sockwrite -n $sockname GET /login2.srf HTTP/1.1
+  sockwrite -n $sockname Authorization: Passport1.4 OrgVerb=GET,OrgURL=?,sign-in= $+ $gettok($gettok($sock($sockname).mark,1,32),1,64) $+ $chr(37) $+ 40 $+ $gettok($gettok($sock($sockname).mark,1,32),2,64) $+ ,pwd= $+ $gettok($sock($sockname).mark,2,32) $+ ,id=507
+  sockwrite -n $sockname Host: $+(msnialogin.passport.com,$crlf,$crlf)
+}
+
+on *:sockread:update:{
+  var %data
+  sockread %data
+  tokenize 32 %data
+  if (%data != $null) {
+    if ($1 == Authentication-Info:) {
+      set %ticket $right($gettok($mid($3,$pos($3,'t=),$len($3)),1,38),-3)
+      set %profile $right($gettok($gettok($mid($3,$pos($3,'t=),$len($3)),2,38),1,39),-2)
+      render
+    }
+    elseif ($3 == Unauthorized) {
+      echo -s 4Passport details incorrect.
+      sockclose $sockname
+    } 
+  }
+}
+
+
+alias render {
+  if ($sock(renderchat).status != active) { 
+    sockopen renderchat chat.msn.com 80
+  }
+}
+on *:sockopen:renderchat:{
+  sockwrite -n $sockname GET /renderchat.msnw? HTTP/1.1
+  sockwrite -n $sockname HOST: chat.msn.com
+  sockwrite -n $sockname User-Agent: compatible; MSIE 4.0; Windows NT 4.0
+  sockwrite -n $sockname Cookie: MSPAuth= $+ %ticket $+ ; MSPProf= $+ %profile $+ $crlf $+ $crlf
+}
+
+on *:sockread:renderchat:{
+  sockread -n &read
+  if ($sockbr == 0) { return }
+  if ($bvar(&read,$bfind(&read, 1, 34 83 117 98 115 99 114 105 98 101 114 73 110 102 111 34),$bvar(&read,0))) { 
+    if (SubscriberInfo isin $bvar(&read,$bfind(&read,1,34 83 117 98 115 99 114 105 98 101 114 73 110 102 111 34),$bvar(&read,0)).text) { 
+      var %x = $bvar(&read,$bfind(&read,1,34 83 117 98 115 99 114 105 98 101 114 73 110 102 111 34),$bvar(&read,0)).text
+      %x = $mid(%x,$pos(%x,VALUE),$len(%x))
+      %x = $mid(%x,$calc($pos(%x,") + 1),$len(%x))
+      set %sinfo $mid(%x,1,$calc($pos(%x,") - 1))
+      conmessage Passport update complete for %account in $calc($calc($ticks - %udticks) / 1000) Seconds
+      stabilize
+      .timerclose 1 10 window -c @update
+    }
+  }
+}
+
+;EXTRA
+;;;;;;Hunter Seeker by Sky;;;;;;
+
+#hunterseeker off
+raw 642:*:{
+  if ($me !ison $4) && ($getsckchan($4) == $null) {
+    var %x = $chanhash
+    sockopen %x $3 6667 
+    sockmark %x $4
+  }
+  elseif ($getsckchan($4) != $null) && ($me !ison $4) {
+    sockwrite -tn $getsckchan($4) JOIN $4
+  }
+}
+raw 643:*:{
+  .disable #hunterseeker
+}
+
+#hunterseeker end
+
+alias hunt {
+  .enable #hunterseeker
+  findu $1
+}
+
+
+
+alias r run $mircexe | exit
